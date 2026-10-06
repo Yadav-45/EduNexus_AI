@@ -1,0 +1,7 @@
+[
+  "tests/test_api_smoke.py::test_docs",
+  "tests/test_api_smoke.py::test_health",
+  "tests/test_api_smoke.py::test_login",
+  "tests/test_api_smoke.py::test_openapi",
+  "tests/test_api_smoke.py::test_unauthorized_students"
+]
