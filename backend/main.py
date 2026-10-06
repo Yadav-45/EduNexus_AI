@@ -1,7 +1,12 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from database import Base, engine
+from database import Base, engine, get_db
+
+from auth.security import hash_password
+
 
 # =========================
 # MODELS
@@ -116,6 +121,99 @@ app.add_middleware(
 # =========================
 
 Base.metadata.create_all(bind=engine)
+
+
+# =========================
+# DEFAULT OWNER ACCOUNT
+# =========================
+
+def ensure_default_owner():
+    """
+    Create or update the default OWNER account using
+    environment variables.
+
+    Required Render environment variables:
+
+    DEFAULT_OWNER_EMAIL
+    DEFAULT_OWNER_PASSWORD
+    """
+
+    email = os.getenv("DEFAULT_OWNER_EMAIL")
+    password = os.getenv("DEFAULT_OWNER_PASSWORD")
+
+    # Environment variables are optional.
+    # If they are not configured, skip this step.
+    if not email or not password:
+        print(
+            "DEFAULT_OWNER_EMAIL or DEFAULT_OWNER_PASSWORD "
+            "is not configured. Skipping default owner setup."
+        )
+        return
+
+    db = next(get_db())
+
+    try:
+        owner = (
+            db.query(User)
+            .filter(User.email == email)
+            .first()
+        )
+
+        # ==========================================
+        # CREATE OWNER IF IT DOES NOT EXIST
+        # ==========================================
+
+        if owner is None:
+
+            owner = User(
+                full_name="EduNexus Owner",
+                email=email,
+                password_hash=hash_password(password),
+                role="OWNER",
+                is_active=True,
+            )
+
+            db.add(owner)
+
+            db.commit()
+            db.refresh(owner)
+
+            print(
+                f"Default owner account created successfully: {email}"
+            )
+
+        # ==========================================
+        # UPDATE EXISTING OWNER
+        # ==========================================
+
+        else:
+
+            owner.password_hash = hash_password(password)
+            owner.role = "OWNER"
+            owner.is_active = True
+
+            db.commit()
+            db.refresh(owner)
+
+            print(
+                f"Default owner account updated successfully: {email}"
+            )
+
+    except Exception as exc:
+
+        db.rollback()
+
+        print(
+            f"ERROR: Failed to create/update default owner: {exc}"
+        )
+
+    finally:
+
+        db.close()
+
+
+# Run owner setup when backend starts
+ensure_default_owner()
 
 
 # =========================
