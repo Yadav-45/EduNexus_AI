@@ -54,7 +54,6 @@ import Exam from "./pages/Academic/Exam";
 import ExamPapers from "./pages/Academic/Exampapers";
 import ExamResults from "./pages/Academic/ExamResults";
 
-
 function App() {
   return (
     <BrowserRouter>
@@ -62,19 +61,20 @@ function App() {
 
         {/* ==================== PUBLIC ==================== */}
 
-        <Route path="/login" element={<Login />} />
+        {/* Root URL now goes to login */}
+        <Route
+          path="/"
+          element={<Navigate to="/login" replace />}
+        />
+
+        {/* Login page */}
+        <Route
+          path="/login"
+          element={<Login />}
+        />
 
 
         {/* ==================== MAIN DASHBOARDS ==================== */}
-
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
 
         <Route
           path="/dashboard"
@@ -475,7 +475,11 @@ function App() {
 
         {/* ==================== FALLBACK ==================== */}
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Unknown URLs go to login instead of creating a redirect loop */}
+        <Route
+          path="*"
+          element={<Navigate to="/login" replace />}
+        />
 
       </Routes>
     </BrowserRouter>
