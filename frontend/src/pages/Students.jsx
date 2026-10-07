@@ -122,22 +122,47 @@ function formatDate(value) {
   });
 }
 
+/* =========================================================
+   TABLE STYLES
+   ========================================================= */
+
+const tableHeaderStyle = {
+  padding: "14px 16px",
+  textAlign: "left",
+  fontSize: "13px",
+  fontWeight: 700,
+  color: "#475569",
+  whiteSpace: "nowrap",
+  borderBottom: "1px solid #e2e8f0",
+};
+
+const tableCellStyle = {
+  padding: "16px",
+  fontSize: "14px",
+  color: "#334155",
+  verticalAlign: "middle",
+};
+
+/* =========================================================
+   STUDENTS PAGE
+   ========================================================= */
+
 export default function Students() {
   const [students, setStudents] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState("");
 
   const [showAddForm, setShowAddForm] = useState(false);
-
   const [saving, setSaving] = useState(false);
 
   const [formError, setFormError] = useState("");
-
   const [successMessage, setSuccessMessage] = useState("");
 
   const [form, setForm] = useState(emptyStudentForm);
+
+  /* =======================================================
+     LOAD STUDENTS
+     ======================================================= */
 
   async function loadStudents() {
     try {
@@ -149,20 +174,17 @@ export default function Students() {
         localStorage.getItem("token") ||
         "";
 
-      const response = await fetch(
-        `${API_BASE_URL}/students`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-            ...(accessToken
-              ? {
-                  Authorization: `Bearer ${accessToken}`,
-                }
-              : {}),
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/students`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          ...(accessToken
+            ? {
+                Authorization: `Bearer ${accessToken}`,
+              }
+            : {}),
+        },
+      });
 
       if (response.status === 401) {
         throw new Error(
@@ -177,8 +199,7 @@ export default function Students() {
       }
 
       if (!response.ok) {
-        let message =
-          `Failed to load students (${response.status})`;
+        let message = `Failed to load students (${response.status})`;
 
         try {
           const errorData = await response.json();
@@ -198,8 +219,7 @@ export default function Students() {
 
       console.log("Students API response:", data);
 
-      const normalizedStudents =
-        normalizeStudents(data);
+      const normalizedStudents = normalizeStudents(data);
 
       console.log(
         "Normalized students:",
@@ -208,10 +228,7 @@ export default function Students() {
 
       setStudents(normalizedStudents);
     } catch (err) {
-      console.error(
-        "Students loading error:",
-        err
-      );
+      console.error("Students loading error:", err);
 
       setStudents([]);
 
@@ -228,6 +245,10 @@ export default function Students() {
     loadStudents();
   }, []);
 
+  /* =======================================================
+     FORM HANDLING
+     ======================================================= */
+
   function handleFormChange(event) {
     const { name, value } = event.target;
 
@@ -241,7 +262,10 @@ export default function Students() {
   }
 
   function openAddForm() {
-    setForm(emptyStudentForm);
+    setForm({
+      ...emptyStudentForm,
+    });
+
     setFormError("");
     setSuccessMessage("");
     setShowAddForm(true);
@@ -253,9 +277,18 @@ export default function Students() {
     }
 
     setShowAddForm(false);
-    setForm(emptyStudentForm);
+
+    setForm({
+      ...emptyStudentForm,
+    });
+
     setFormError("");
+    setSuccessMessage("");
   }
+
+  /* =======================================================
+     CREATE STUDENT
+     ======================================================= */
 
   async function handleCreateStudent(event) {
     event.preventDefault();
@@ -370,14 +403,24 @@ export default function Students() {
         responseData
       );
 
+      /*
+       * Refresh the list first.
+       * This prevents the modal from closing
+       * before the newly created student is visible.
+       */
+      await loadStudents();
+
       setSuccessMessage(
         "Student created successfully."
       );
 
-      setForm(emptyStudentForm);
+      setForm({
+        ...emptyStudentForm,
+      });
 
-      await loadStudents();
-
+      /*
+       * Close the form after successful refresh.
+       */
       setTimeout(() => {
         setShowAddForm(false);
         setSuccessMessage("");
@@ -397,6 +440,10 @@ export default function Students() {
     }
   }
 
+  /* =======================================================
+     PAGE
+     ======================================================= */
+
   return (
     <div
       style={{
@@ -406,7 +453,9 @@ export default function Students() {
         boxSizing: "border-box",
       }}
     >
-      {/* HEADER */}
+      {/* ===================================================
+          HEADER
+          =================================================== */}
 
       <div
         style={{
@@ -462,6 +511,8 @@ export default function Students() {
             alignItems: "center",
           }}
         >
+          {/* REFRESH */}
+
           <button
             type="button"
             onClick={loadStudents}
@@ -480,8 +531,12 @@ export default function Students() {
               opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? "Loading..." : "Refresh"}
+            {loading
+              ? "Loading..."
+              : "Refresh"}
           </button>
+
+          {/* ADD STUDENT */}
 
           <button
             type="button"
@@ -504,7 +559,9 @@ export default function Students() {
         </div>
       </div>
 
-      {/* PAGE ERROR */}
+      {/* ===================================================
+          PAGE ERROR
+          =================================================== */}
 
       {error && (
         <div
@@ -522,7 +579,9 @@ export default function Students() {
         </div>
       )}
 
-      {/* LOADING */}
+      {/* ===================================================
+          LOADING
+          =================================================== */}
 
       {loading && (
         <div
@@ -538,7 +597,9 @@ export default function Students() {
         </div>
       )}
 
-      {/* STUDENT LIST */}
+      {/* ===================================================
+          STUDENT LIST
+          =================================================== */}
 
       {!loading && (
         <div
@@ -549,6 +610,8 @@ export default function Students() {
             overflow: "hidden",
           }}
         >
+          {/* LIST HEADER */}
+
           <div
             style={{
               padding: "20px 24px",
@@ -580,6 +643,8 @@ export default function Students() {
               </span>
             )}
           </div>
+
+          {/* EMPTY STATE */}
 
           {students.length === 0 ? (
             <div
@@ -637,6 +702,10 @@ export default function Students() {
               </button>
             </div>
           ) : (
+            /* =================================================
+               TABLE
+               ================================================= */
+
             <div
               style={{
                 width: "100%",
@@ -658,39 +727,75 @@ export default function Students() {
                         "#f1f5f9",
                     }}
                   >
-                    <th style={tableHeaderStyle}>
+                    <th
+                      style={
+                        tableHeaderStyle
+                      }
+                    >
                       ID
                     </th>
 
-                    <th style={tableHeaderStyle}>
+                    <th
+                      style={
+                        tableHeaderStyle
+                      }
+                    >
                       Student
                     </th>
 
-                    <th style={tableHeaderStyle}>
+                    <th
+                      style={
+                        tableHeaderStyle
+                      }
+                    >
                       Admission No.
                     </th>
 
-                    <th style={tableHeaderStyle}>
+                    <th
+                      style={
+                        tableHeaderStyle
+                      }
+                    >
                       Class
                     </th>
 
-                    <th style={tableHeaderStyle}>
+                    <th
+                      style={
+                        tableHeaderStyle
+                      }
+                    >
                       Section
                     </th>
 
-                    <th style={tableHeaderStyle}>
+                    <th
+                      style={
+                        tableHeaderStyle
+                      }
+                    >
                       Phone
                     </th>
 
-                    <th style={tableHeaderStyle}>
+                    <th
+                      style={
+                        tableHeaderStyle
+                      }
+                    >
                       Academic Year
                     </th>
 
-                    <th style={tableHeaderStyle}>
+                    <th
+                      style={
+                        tableHeaderStyle
+                      }
+                    >
                       Status
                     </th>
 
-                    <th style={tableHeaderStyle}>
+                    <th
+                      style={
+                        tableHeaderStyle
+                      }
+                    >
                       Admission Date
                     </th>
                   </tr>
@@ -706,11 +811,23 @@ export default function Students() {
                             "1px solid #e2e8f0",
                         }}
                       >
-                        <td style={tableCellStyle}>
+                        {/* ID */}
+
+                        <td
+                          style={
+                            tableCellStyle
+                          }
+                        >
                           {student.id ?? "—"}
                         </td>
 
-                        <td style={tableCellStyle}>
+                        {/* STUDENT */}
+
+                        <td
+                          style={
+                            tableCellStyle
+                          }
+                        >
                           <div
                             style={{
                               fontWeight: 600,
@@ -738,32 +855,67 @@ export default function Students() {
                           )}
                         </td>
 
-                        <td style={tableCellStyle}>
+                        {/* ADMISSION NUMBER */}
+
+                        <td
+                          style={
+                            tableCellStyle
+                          }
+                        >
                           {student.admission_number ||
                             "—"}
                         </td>
 
-                        <td style={tableCellStyle}>
-                          {student.class_name ||
-                            "—"}
+                        {/* CLASS */}
+
+                        <td
+                          style={
+                            tableCellStyle
+                          }
+                        >
+                          {getClassName(student)}
                         </td>
 
-                        <td style={tableCellStyle}>
+                        {/* SECTION */}
+
+                        <td
+                          style={
+                            tableCellStyle
+                          }
+                        >
                           {student.section ||
                             "—"}
                         </td>
 
-                        <td style={tableCellStyle}>
+                        {/* PHONE */}
+
+                        <td
+                          style={
+                            tableCellStyle
+                          }
+                        >
                           {student.phone ||
                             "—"}
                         </td>
 
-                        <td style={tableCellStyle}>
+                        {/* ACADEMIC YEAR */}
+
+                        <td
+                          style={
+                            tableCellStyle
+                          }
+                        >
                           {student.academic_year ||
                             "—"}
                         </td>
 
-                        <td style={tableCellStyle}>
+                        {/* STATUS */}
+
+                        <td
+                          style={
+                            tableCellStyle
+                          }
+                        >
                           <span
                             style={{
                               display:
@@ -785,7 +937,13 @@ export default function Students() {
                           </span>
                         </td>
 
-                        <td style={tableCellStyle}>
+                        {/* ADMISSION DATE */}
+
+                        <td
+                          style={
+                            tableCellStyle
+                          }
+                        >
                           {formatDate(
                             student.admission_date
                           )}
@@ -800,7 +958,9 @@ export default function Students() {
         </div>
       )}
 
-      {/* ADD STUDENT MODAL */}
+      {/* ===================================================
+          ADD STUDENT MODAL
+          =================================================== */}
 
       {showAddForm && (
         <div
@@ -904,13 +1064,17 @@ export default function Students() {
                 padding: "26px",
               }}
             >
+              {/* FORM ERROR */}
+
               {formError && (
                 <div
                   style={{
                     marginBottom:
                       "18px",
-                    padding: "14px 16px",
-                    borderRadius: "9px",
+                    padding:
+                      "14px 16px",
+                    borderRadius:
+                      "9px",
                     background:
                       "#fee2e2",
                     color:
@@ -924,13 +1088,17 @@ export default function Students() {
                 </div>
               )}
 
+              {/* SUCCESS */}
+
               {successMessage && (
                 <div
                   style={{
                     marginBottom:
                       "18px",
-                    padding: "14px 16px",
-                    borderRadius: "9px",
+                    padding:
+                      "14px 16px",
+                    borderRadius:
+                      "9px",
                     background:
                       "#dcfce7",
                     color:
@@ -946,14 +1114,13 @@ export default function Students() {
 
               <div
                 style={{
-                  display:
-                    "grid",
+                  display: "grid",
                   gridTemplateColumns:
                     "repeat(2, minmax(0, 1fr))",
                   gap: "18px",
                 }}
               >
-                {/* Admission Number */}
+                {/* ADMISSION NUMBER */}
 
                 <FormField
                   label="Admission Number"
@@ -976,7 +1143,7 @@ export default function Students() {
                   />
                 </FormField>
 
-                {/* First Name */}
+                {/* FIRST NAME */}
 
                 <FormField
                   label="First Name"
@@ -999,7 +1166,7 @@ export default function Students() {
                   />
                 </FormField>
 
-                {/* Last Name */}
+                {/* LAST NAME */}
 
                 <FormField
                   label="Last Name"
@@ -1020,7 +1187,7 @@ export default function Students() {
                   />
                 </FormField>
 
-                {/* Gender */}
+                {/* GENDER */}
 
                 <FormField
                   label="Gender"
@@ -1055,7 +1222,7 @@ export default function Students() {
                   </select>
                 </FormField>
 
-                {/* Date of Birth */}
+                {/* DATE OF BIRTH */}
 
                 <FormField
                   label="Date of Birth"
@@ -1075,7 +1242,7 @@ export default function Students() {
                   />
                 </FormField>
 
-                {/* Phone */}
+                {/* PHONE */}
 
                 <FormField
                   label="Phone"
@@ -1094,7 +1261,7 @@ export default function Students() {
                   />
                 </FormField>
 
-                {/* Class */}
+                {/* CLASS */}
 
                 <FormField
                   label="Class"
@@ -1115,7 +1282,7 @@ export default function Students() {
                   />
                 </FormField>
 
-                {/* Section */}
+                {/* SECTION */}
 
                 <FormField
                   label="Section"
@@ -1136,7 +1303,7 @@ export default function Students() {
                   />
                 </FormField>
 
-                {/* Academic Year */}
+                {/* ACADEMIC YEAR */}
 
                 <FormField
                   label="Academic Year"
@@ -1157,7 +1324,7 @@ export default function Students() {
                   />
                 </FormField>
 
-                {/* Admission Date */}
+                {/* ADMISSION DATE */}
 
                 <FormField
                   label="Admission Date"
@@ -1177,7 +1344,7 @@ export default function Students() {
                   />
                 </FormField>
 
-                {/* Status */}
+                {/* STATUS */}
 
                 <FormField
                   label="Status"
@@ -1204,7 +1371,7 @@ export default function Students() {
                   </select>
                 </FormField>
 
-                {/* Address */}
+                {/* ADDRESS */}
 
                 <div
                   style={{
@@ -1249,6 +1416,8 @@ export default function Students() {
                     "1px solid #e2e8f0",
                 }}
               >
+                {/* CANCEL */}
+
                 <button
                   type="button"
                   onClick={
@@ -1277,6 +1446,8 @@ export default function Students() {
                 >
                   Cancel
                 </button>
+
+                {/* SAVE */}
 
                 <button
                   type="submit"
@@ -1316,6 +1487,10 @@ export default function Students() {
   );
 }
 
+/* =========================================================
+   FORM FIELD COMPONENT
+   ========================================================= */
+
 function FormField({
   label,
   required = false,
@@ -1333,6 +1508,7 @@ function FormField({
         }}
       >
         {label}
+
         {required && (
           <span
             style={{
@@ -1349,6 +1525,10 @@ function FormField({
     </div>
   );
 }
+
+/* =========================================================
+   INPUT STYLE
+   ========================================================= */
 
 const inputStyle = {
   width: "100%",
