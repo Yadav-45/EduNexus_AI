@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL, getAuthToken } from "../api/config";
 
 function Profile() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ function Profile() {
 
   useEffect(() => {
     const loadProfile = async () => {
-      const token = localStorage.getItem("access_token");
+      const token = getAuthToken();
 
       if (!token) {
         navigate("/");
@@ -24,7 +25,7 @@ function Profile() {
 
       try {
         const response = await fetch(
-          "http://127.0.0.1:8000/profile",
+          `${API_BASE_URL}/profile`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -66,8 +67,7 @@ function Profile() {
       return;
     }
 
-    const token =
-      localStorage.getItem("access_token");
+    const token = getAuthToken();
 
     if (!token) {
       navigate("/");
@@ -80,7 +80,7 @@ function Profile() {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/profile",
+        `${API_BASE_URL}/profile`,
         {
           method: "PUT",
           headers: {

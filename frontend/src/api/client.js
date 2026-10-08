@@ -1,8 +1,7 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+import { API_BASE_URL, getAuthToken } from "./config";
 
 export async function apiRequest(endpoint, options = {}) {
-  const token = localStorage.getItem("edunexus_token");
+  const token = getAuthToken();
 
   const headers = {
     "Content-Type": "application/json",

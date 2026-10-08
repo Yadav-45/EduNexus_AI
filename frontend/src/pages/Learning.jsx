@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../api/config";
 
 function Learning() {
   const navigate = useNavigate();
@@ -118,7 +119,7 @@ function Learning() {
     const loadProgress = async () => {
       try {
         const response = await fetch(
-          `http://127.0.0.1:8000/courses/${courseId}/progress`
+          `${API_BASE_URL}/courses/${courseId}/progress`
         );
 
         if (!response.ok) {
@@ -156,7 +157,7 @@ function Learning() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/courses/${courseId}/complete`,
+        `${API_BASE_URL}/courses/${courseId}/complete`,
         {
           method: "POST",
           headers: {

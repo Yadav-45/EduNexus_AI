@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const API_BASE_URL = "http://127.0.0.1:8000";
+import { API_BASE_URL, getAuthToken } from "../../api/config";
 
 export default function StaffAttendance() {
   const navigate = useNavigate();
@@ -53,10 +52,7 @@ export default function StaffAttendance() {
   });
 
   const getToken = () => {
-    return (
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("token")
-    );
+    return getAuthToken();
   };
 
   const getHeaders = () => {

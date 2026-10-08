@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../api/config";
 
 const STORAGE_KEY = "edunexus_ai_tutor_messages";
 
@@ -69,7 +70,7 @@ function AITutor() {
 
     try {
       const response = await fetch(
-        "http://127.0.0.1:8000/ai-tutor",
+        `${API_BASE_URL}/ai-tutor`,
         {
           method: "POST",
           headers: {

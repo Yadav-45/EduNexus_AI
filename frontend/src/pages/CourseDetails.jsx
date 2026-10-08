@@ -3,6 +3,7 @@ import {
   useSearchParams,
   useNavigate,
 } from "react-router-dom";
+import { API_BASE_URL } from "../api/config";
 
 function CourseDetails() {
   const [searchParams] = useSearchParams();
@@ -18,7 +19,7 @@ function CourseDetails() {
     const loadCourse = async () => {
       try {
         const courseResponse = await fetch(
-          `http://127.0.0.1:8000/courses/${courseId}`
+          `${API_BASE_URL}/courses/${courseId}`
         );
 
         if (!courseResponse.ok) {
@@ -33,7 +34,7 @@ function CourseDetails() {
         try {
           const progressResponse =
             await fetch(
-              `http://127.0.0.1:8000/courses/${courseId}/progress`
+              `${API_BASE_URL}/courses/${courseId}/progress`
             );
 
           if (progressResponse.ok) {

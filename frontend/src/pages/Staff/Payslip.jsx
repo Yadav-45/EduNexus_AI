@@ -1,17 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
-const API_BASE = "http://127.0.0.1:8000";
+import { API_BASE_URL as API_BASE, getAuthToken } from "../../api/config";
 
 // ============================================================
 // HELPERS
 // ============================================================
 
 const getToken = () => {
-  return (
-    localStorage.getItem("access_token") ||
-    localStorage.getItem("token")
-  );
+  return getAuthToken();
 };
 
 const money = (value) => {

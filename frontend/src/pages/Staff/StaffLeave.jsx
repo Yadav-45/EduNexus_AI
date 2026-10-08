@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const API_BASE = "http://127.0.0.1:8000";
+import { API_BASE_URL as API_BASE, getAuthToken } from "../../api/config";
 
 const today = new Date().toISOString().split("T")[0];
 
@@ -55,9 +54,7 @@ function StaffLeave() {
 
   const [form, setForm] = useState(initialForm);
 
-  const token =
-    localStorage.getItem("access_token") ||
-    localStorage.getItem("token");
+  const token = getAuthToken();
 
   const authHeaders = {
     Authorization: `Bearer ${token}`,

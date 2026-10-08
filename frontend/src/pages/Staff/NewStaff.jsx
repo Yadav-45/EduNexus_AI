@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const API_BASE_URL = "http://127.0.0.1:8000";
+import { API_BASE_URL, getAuthToken } from "../../api/config";
 
 export default function NewStaff() {
   const navigate = useNavigate();
@@ -147,7 +146,7 @@ export default function NewStaff() {
         );
       }
 
-      const token = getToken();
+      const token = getAuthToken();
 
       const response = await fetch(
         `${API_BASE_URL}/staff`,

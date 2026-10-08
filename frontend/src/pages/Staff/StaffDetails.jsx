@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
-const API_BASE_URL = "http://127.0.0.1:8000";
+import { API_BASE_URL, getAuthToken } from "../../api/config";
 
 export default function StaffDetails() {
   const { staffId } = useParams();
@@ -12,10 +11,7 @@ export default function StaffDetails() {
   const [error, setError] = useState("");
 
   const getToken = () => {
-    return (
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("token")
-    );
+    return getAuthToken();
   };
 
   const loadStaff = async () => {

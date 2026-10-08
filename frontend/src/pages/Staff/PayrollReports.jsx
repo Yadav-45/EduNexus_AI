@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-
-const API_BASE = "http://127.0.0.1:8000";
+import { API_BASE_URL as API_BASE, getAuthToken } from "../../api/config";
 
 function PayrollReports() {
   const today = new Date();
@@ -19,9 +18,7 @@ function PayrollReports() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  const token =
-    localStorage.getItem("access_token") ||
-    localStorage.getItem("token");
+  const token = getAuthToken();
 
   const headers = {
     "Content-Type": "application/json",

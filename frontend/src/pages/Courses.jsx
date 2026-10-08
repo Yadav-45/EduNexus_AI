@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../api/config";
 
 function Courses() {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ function Courses() {
     const loadCourses = async () => {
       try {
         const coursesResponse = await fetch(
-          "http://127.0.0.1:8000/courses"
+          `${API_BASE_URL}/courses`
         );
 
         if (!coursesResponse.ok) {
@@ -31,7 +32,7 @@ function Courses() {
           try {
             const progressResponse =
               await fetch(
-                `http://127.0.0.1:8000/courses/${course.id}/progress`
+                `${API_BASE_URL}/courses/${course.id}/progress`
               );
 
             if (progressResponse.ok) {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../api/config";
 
 function Assignments() {
   const navigate = useNavigate();
@@ -10,7 +11,7 @@ function Assignments() {
   const [completing, setCompleting] = useState(null);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/assignments")
+    fetch(`${API_BASE_URL}/assignments`)
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to load assignments");
@@ -35,7 +36,7 @@ function Assignments() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/assignments/${assignmentId}/complete`,
+        `${API_BASE_URL}/assignments/${assignmentId}/complete`,
         {
           method: "POST",
         }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL, getAuthToken } from "../api/config";
 
 const AI_TUTOR_STORAGE_KEY =
   "edunexus_ai_tutor_messages";
@@ -37,8 +38,7 @@ function Dashboard() {
 
   const loadDashboardData = useCallback(
     async () => {
-      const token =
-        localStorage.getItem("access_token");
+      const token = getAuthToken();
 
       if (!token) {
         navigate("/");
@@ -51,7 +51,7 @@ function Dashboard() {
 
       try {
         const response = await fetch(
-          "http://127.0.0.1:8000/profile",
+          `${API_BASE_URL}/profile`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -101,7 +101,7 @@ function Dashboard() {
 
       try {
         const response = await fetch(
-          "http://127.0.0.1:8000/courses/1/progress"
+          `${API_BASE_URL}/courses/1/progress`
         );
 
         if (response.ok) {
@@ -125,7 +125,7 @@ function Dashboard() {
 
       try {
         const response = await fetch(
-          "http://127.0.0.1:8000/assignments"
+          `${API_BASE_URL}/assignments`
         );
 
         if (response.ok) {

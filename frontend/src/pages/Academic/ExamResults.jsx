@@ -3,8 +3,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-
-const API_BASE = "http://127.0.0.1:8000";
+import { API_BASE_URL as API_BASE } from "../../api/config";
 
 const RESULT_STATUSES = [
   "PENDING",
