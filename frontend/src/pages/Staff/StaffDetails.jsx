@@ -1,6 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { API_BASE_URL, getAuthToken } from "../../api/config";
+import {
+  ArrowLeft,
+  Edit3,
+  Archive,
+  User,
+  Phone,
+  Briefcase,
+  IndianRupee,
+  ShieldAlert,
+  Building,
+  FileText,
+  Database,
+  Calendar,
+  Sparkles,
+} from "lucide-react";
 
 export default function StaffDetails() {
   const { staffId } = useParams();
@@ -40,14 +55,13 @@ export default function StaffDetails() {
 
       if (!response.ok) {
         throw new Error(
-          data.detail || "Unable to load staff profile."
+          data.detail || "Unable to fetch staff details."
         );
       }
 
       setStaff(data);
     } catch (err) {
       console.error(err);
-
       setError(
         err.message ||
           "Something went wrong while loading the staff profile."
@@ -99,7 +113,6 @@ export default function StaffDetails() {
       navigate("/staff");
     } catch (err) {
       console.error(err);
-
       setError(
         err.message ||
           "Something went wrong while archiving the staff member."
@@ -108,9 +121,7 @@ export default function StaffDetails() {
   };
 
   const fullName = staff
-    ? `${staff.first_name || ""} ${
-        staff.last_name || ""
-      }`.trim()
+    ? `${staff.first_name || ""} ${staff.last_name || ""}`.trim()
     : "";
 
   const initials = staff
@@ -120,10 +131,7 @@ export default function StaffDetails() {
     : "";
 
   const formatDate = (value) => {
-    if (!value) {
-      return "—";
-    }
-
+    if (!value) return "—";
     try {
       return new Date(value).toLocaleDateString("en-IN", {
         day: "2-digit",
@@ -136,10 +144,7 @@ export default function StaffDetails() {
   };
 
   const formatMoney = (value) => {
-    if (value === null || value === undefined || value === "") {
-      return "—";
-    }
-
+    if (value === null || value === undefined || value === "") return "—";
     return `₹${Number(value).toLocaleString("en-IN", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -148,9 +153,10 @@ export default function StaffDetails() {
 
   if (loading) {
     return (
-      <div style={pageStyle}>
-        <div style={loadingStyle}>
-          Loading staff profile...
+      <div className="dark-details-page">
+        <div className="state-card">
+          <div className="spinner"></div>
+          <p>Decrypting staff identity record...</p>
         </div>
       </div>
     );
@@ -158,645 +164,549 @@ export default function StaffDetails() {
 
   if (error && !staff) {
     return (
-      <div style={pageStyle}>
-        <div style={errorStyle}>
-          {error}
+      <div className="dark-details-page">
+        <div className="state-card error-card">
+          <p>{error}</p>
+          <button onClick={() => navigate("/staff")} className="btn-secondary">
+            <ArrowLeft size={16} /> Back to Staff
+          </button>
         </div>
-
-        <button
-          onClick={() => navigate("/staff")}
-          style={backButtonStyle}
-        >
-          ← Back to Staff
-        </button>
       </div>
     );
   }
 
   if (!staff) {
     return (
-      <div style={pageStyle}>
-        <div style={emptyStyle}>
-          Staff member not found.
+      <div className="dark-details-page">
+        <div className="state-card">
+          <p>Staff member record not found.</p>
+          <button onClick={() => navigate("/staff")} className="btn-secondary">
+            <ArrowLeft size={16} /> Back to Staff
+          </button>
         </div>
-
-        <button
-          onClick={() => navigate("/staff")}
-          style={backButtonStyle}
-        >
-          ← Back to Staff
-        </button>
       </div>
     );
   }
 
   return (
-    <div style={pageStyle}>
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "15px",
-          marginBottom: "25px",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "15px",
-          }}
-        >
-          <button
-            onClick={() => navigate("/staff")}
-            style={backButtonStyle}
-          >
-            ← Back
+    <div className="dark-details-page">
+      {/* Top Action Bar */}
+      <div className="top-action-bar">
+        <div className="bar-left">
+          <button onClick={() => navigate("/staff")} className="btn-back">
+            <ArrowLeft size={16} />
+            <span>Staff Directory</span>
           </button>
-
           <div>
-            <h1 style={titleStyle}>
-              Staff Profile
-            </h1>
-
-            <p style={subtitleStyle}>
-              View complete staff information
+            <h1 className="page-heading">Staff Profile Dossier</h1>
+            <p className="page-subheading">
+              Official institutional record and credential profile
             </p>
           </div>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-          }}
-        >
+        <div className="bar-actions">
           <button
-            onClick={() =>
-              navigate(`/staff/${staff.id}/edit`)
-            }
-            style={editButtonStyle}
+            onClick={() => navigate(`/staff/${staff.id}/edit`)}
+            className="btn-edit"
           >
-            Edit Staff
+            <Edit3 size={15} />
+            <span>Edit Profile</span>
           </button>
 
-          <button
-            onClick={handleDelete}
-            style={deleteButtonStyle}
-          >
-            Archive
+          <button onClick={handleDelete} className="btn-archive">
+            <Archive size={15} />
+            <span>Archive</span>
           </button>
         </div>
       </div>
 
-      {error && (
-        <div style={errorStyle}>
-          {error}
-        </div>
-      )}
+      {error && <div className="error-banner">{error}</div>}
 
-      {/* =====================================================
-          PROFILE HEADER
-      ====================================================== */}
+      {/* Hero Overview Card */}
+      <div className="profile-hero-card">
+        <div className="hero-left">
+          <div className="hero-avatar">{initials || "ST"}</div>
+          <div className="hero-details">
+            <div className="hero-name-row">
+              <h2 className="hero-name">{fullName || "Unnamed Staff"}</h2>
+              <StatusBadge status={staff.status} />
+            </div>
 
-      <div style={cardStyle}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "18px",
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={avatarStyle}>
-            {initials}
-          </div>
-
-          <div style={{ flex: 1 }}>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "25px",
-                color: "#172033",
-              }}
-            >
-              {fullName}
-            </h2>
-
-            <p
-              style={{
-                margin: "6px 0",
-                color: "#6b7280",
-                fontSize: "14px",
-              }}
-            >
+            <p className="hero-role">
               {staff.designation || "Staff Member"}
-              {staff.department
-                ? ` • ${staff.department}`
-                : ""}
+              {staff.department ? ` • ${staff.department}` : ""}
             </p>
 
-            <p
-              style={{
-                margin: 0,
-                color: "#6b7280",
-                fontSize: "13px",
-              }}
-            >
-              Staff ID:{" "}
-              <strong>{staff.staff_id}</strong>
-            </p>
+            <div className="hero-meta-row">
+              <span className="meta-badge">
+                ID: <strong>{staff.staff_id || "—"}</strong>
+              </span>
+              <span className="meta-badge">
+                Joined: <strong>{formatDate(staff.joining_date)}</strong>
+              </span>
+              <span className="meta-badge">
+                Type: <strong>{formatEmploymentType(staff.employment_type)}</strong>
+              </span>
+            </div>
           </div>
-
-          <StatusBadge status={staff.status} />
         </div>
       </div>
 
-      {/* =====================================================
-          BASIC INFORMATION
-      ====================================================== */}
+      {/* Grid of Profile Sections */}
+      <div className="sections-grid">
+        {/* Basic Info */}
+        <InfoSection title="Basic Information" icon={User}>
+          <InfoItem label="First Name" value={staff.first_name} />
+          <InfoItem label="Last Name" value={staff.last_name} />
+          <InfoItem label="Gender" value={staff.gender} />
+          <InfoItem label="Date of Birth" value={formatDate(staff.date_of_birth)} />
+          <InfoItem label="Staff ID" value={staff.staff_id} />
+          <InfoItem label="Status" value={staff.status} />
+        </InfoSection>
 
-      <InfoSection title="Basic Information">
-        <InfoItem
-          label="First Name"
-          value={staff.first_name}
-        />
+        {/* Contact Info */}
+        <InfoSection title="Contact Information" icon={Phone}>
+          <InfoItem label="Phone" value={staff.phone} />
+          <InfoItem label="Email" value={staff.email} />
+          <InfoItem label="City" value={staff.city} />
+          <InfoItem label="State" value={staff.state} />
+          <InfoItem label="Postal Code" value={staff.postal_code} />
+          <InfoItem label="Residential Address" value={staff.address} fullWidth />
+        </InfoSection>
 
-        <InfoItem
-          label="Last Name"
-          value={staff.last_name}
-        />
+        {/* Employment Info */}
+        <InfoSection title="Employment & Academic" icon={Briefcase}>
+          <InfoItem label="Joining Date" value={formatDate(staff.joining_date)} />
+          <InfoItem label="Department" value={staff.department} />
+          <InfoItem label="Designation" value={staff.designation} />
+          <InfoItem
+            label="Employment Type"
+            value={formatEmploymentType(staff.employment_type)}
+          />
+          <InfoItem label="Highest Qualification" value={staff.qualification} />
+          <InfoItem
+            label="Total Experience"
+            value={
+              staff.experience_years !== null && staff.experience_years !== undefined
+                ? `${staff.experience_years} Years`
+                : "—"
+            }
+          />
+        </InfoSection>
 
-        <InfoItem
-          label="Gender"
-          value={staff.gender}
-        />
+        {/* Payroll & Compensation */}
+        <InfoSection title="Payroll & Compensation" icon={IndianRupee}>
+          <InfoItem label="Base Basic Salary" value={formatMoney(staff.basic_salary)} />
+          <InfoItem label="Allowances" value={formatMoney(staff.allowances)} />
+          <InfoItem label="Deductions" value={formatMoney(staff.deductions)} />
+          <InfoItem
+            label="Estimated Net Payout"
+            value={formatMoney(calculateNetSalary(staff))}
+            highlight
+          />
+        </InfoSection>
 
-        <InfoItem
-          label="Date of Birth"
-          value={formatDate(staff.date_of_birth)}
-        />
+        {/* Emergency Contact */}
+        <InfoSection title="Emergency Protocol" icon={ShieldAlert}>
+          <InfoItem label="Emergency Contact" value={staff.emergency_contact_name} />
+          <InfoItem label="Emergency Phone" value={staff.emergency_contact_phone} />
+          <InfoItem label="Relationship" value={staff.emergency_contact_relation} />
+        </InfoSection>
 
-        <InfoItem
-          label="Staff ID"
-          value={staff.staff_id}
-        />
+        {/* Banking */}
+        <InfoSection title="Banking & Settlement" icon={Building}>
+          <InfoItem label="Bank Institution" value={staff.bank_name} />
+          <InfoItem label="Account Number" value={staff.bank_account_number} />
+          <InfoItem label="IFSC Code" value={staff.bank_ifsc} />
+        </InfoSection>
 
-        <InfoItem
-          label="Status"
-          value={staff.status}
-        />
-      </InfoSection>
+        {/* Additional Notes */}
+        <InfoSection title="Administrative Notes" icon={FileText}>
+          <InfoItem label="Internal Remarks" value={staff.notes} fullWidth />
+        </InfoSection>
 
-      {/* =====================================================
-          CONTACT
-      ====================================================== */}
+        {/* System Ledger */}
+        <InfoSection title="System Audit Record" icon={Database}>
+          <InfoItem label="Record Created" value={formatDate(staff.created_at)} />
+          <InfoItem label="Last Modified" value={formatDate(staff.updated_at)} />
+          <InfoItem label="Record UUID" value={staff.id} />
+        </InfoSection>
+      </div>
 
-      <InfoSection title="Contact Information">
-        <InfoItem
-          label="Phone"
-          value={staff.phone}
-        />
+      <style>{`
+        .dark-details-page {
+          min-height: 100vh;
+          background: #07090e;
+          color: #f8fafc;
+          padding: 32px;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+        }
 
-        <InfoItem
-          label="Email"
-          value={staff.email}
-        />
+        .state-card {
+          max-width: 450px;
+          margin: 80px auto;
+          background: #111726;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 16px;
+          padding: 36px;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 16px;
+        }
 
-        <InfoItem
-          label="City"
-          value={staff.city}
-        />
+        .error-card {
+          border-color: rgba(244, 63, 94, 0.3);
+          color: #fb7185;
+        }
 
-        <InfoItem
-          label="State"
-          value={staff.state}
-        />
+        .top-action-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 20px;
+          margin-bottom: 28px;
+        }
 
-        <InfoItem
-          label="Postal Code"
-          value={staff.postal_code}
-        />
+        .bar-left {
+          display: flex;
+          align-items: center;
+          gap: 18px;
+        }
 
-        <InfoItem
-          label="Address"
-          value={staff.address}
-          fullWidth
-        />
-      </InfoSection>
+        .btn-back {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: #111726;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: #94a3b8;
+          padding: 8px 14px;
+          border-radius: 10px;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
 
-      {/* =====================================================
-          EMPLOYMENT
-      ====================================================== */}
+        .btn-back:hover {
+          color: #ffffff;
+          background: #172033;
+          border-color: rgba(255, 255, 255, 0.2);
+          transform: translateX(-2px);
+        }
 
-      <InfoSection title="Employment Information">
-        <InfoItem
-          label="Joining Date"
-          value={formatDate(staff.joining_date)}
-        />
+        .page-heading {
+          font-family: 'Outfit', sans-serif;
+          font-size: 24px;
+          font-weight: 700;
+          letter-spacing: -0.02em;
+          margin: 0;
+          color: #ffffff;
+        }
 
-        <InfoItem
-          label="Department"
-          value={staff.department}
-        />
+        .page-subheading {
+          font-size: 13px;
+          color: #64748b;
+          margin: 4px 0 0;
+        }
 
-        <InfoItem
-          label="Designation"
-          value={staff.designation}
-        />
+        .bar-actions {
+          display: flex;
+          gap: 10px;
+        }
 
-        <InfoItem
-          label="Employment Type"
-          value={formatEmploymentType(
-            staff.employment_type
-          )}
-        />
+        .btn-edit {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
+          color: #ffffff;
+          padding: 9px 18px;
+          border-radius: 10px;
+          border: none;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+          transition: all 0.2s;
+        }
 
-        <InfoItem
-          label="Qualification"
-          value={staff.qualification}
-        />
+        .btn-edit:hover {
+          filter: brightness(1.1);
+          transform: translateY(-1px);
+        }
 
-        <InfoItem
-          label="Experience"
-          value={
-            staff.experience_years !== null &&
-            staff.experience_years !== undefined
-              ? `${staff.experience_years} years`
-              : "—"
+        .btn-archive {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: rgba(244, 63, 94, 0.12);
+          border: 1px solid rgba(244, 63, 94, 0.25);
+          color: #fb7185;
+          padding: 9px 16px;
+          border-radius: 10px;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-archive:hover {
+          background: rgba(244, 63, 94, 0.22);
+          color: #ffffff;
+        }
+
+        .error-banner {
+          background: rgba(244, 63, 94, 0.15);
+          border: 1px solid rgba(244, 63, 94, 0.3);
+          color: #fb7185;
+          padding: 12px 18px;
+          border-radius: 10px;
+          font-size: 13.5px;
+          margin-bottom: 24px;
+        }
+
+        .profile-hero-card {
+          background: linear-gradient(135deg, #111726 0%, #0d121f 100%);
+          border: 1px solid rgba(255, 255, 255, 0.09);
+          border-radius: 18px;
+          padding: 26px 30px;
+          margin-bottom: 26px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .hero-left {
+          display: flex;
+          align-items: center;
+          gap: 22px;
+          flex-wrap: wrap;
+        }
+
+        .hero-avatar {
+          width: 72px;
+          height: 72px;
+          border-radius: 18px;
+          background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+          color: #ffffff;
+          font-family: 'Outfit', sans-serif;
+          font-size: 26px;
+          font-weight: 800;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+        }
+
+        .hero-details {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .hero-name-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        .hero-name {
+          font-family: 'Outfit', sans-serif;
+          font-size: 24px;
+          font-weight: 700;
+          color: #ffffff;
+          margin: 0;
+        }
+
+        .hero-role {
+          font-size: 14px;
+          color: #94a3b8;
+          margin: 0;
+        }
+
+        .hero-meta-row {
+          display: flex;
+          gap: 10px;
+          margin-top: 8px;
+          flex-wrap: wrap;
+        }
+
+        .meta-badge {
+          font-size: 12px;
+          color: #64748b;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.07);
+          padding: 4px 10px;
+          border-radius: 6px;
+        }
+
+        .meta-badge strong {
+          color: #cbd5e1;
+        }
+
+        .sections-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+          gap: 22px;
+        }
+
+        @media (max-width: 600px) {
+          .dark-details-page {
+            padding: 18px;
           }
-        />
-      </InfoSection>
-
-      {/* =====================================================
-          SALARY
-      ====================================================== */}
-
-      <InfoSection title="Salary Information">
-        <InfoItem
-          label="Basic Salary"
-          value={formatMoney(staff.basic_salary)}
-        />
-
-        <InfoItem
-          label="Allowances"
-          value={formatMoney(staff.allowances)}
-        />
-
-        <InfoItem
-          label="Deductions"
-          value={formatMoney(staff.deductions)}
-        />
-
-        <InfoItem
-          label="Estimated Net Salary"
-          value={formatMoney(
-            calculateNetSalary(staff)
-          )}
-          highlight
-        />
-      </InfoSection>
-
-      {/* =====================================================
-          EMERGENCY CONTACT
-      ====================================================== */}
-
-      <InfoSection title="Emergency Contact">
-        <InfoItem
-          label="Contact Name"
-          value={staff.emergency_contact_name}
-        />
-
-        <InfoItem
-          label="Phone"
-          value={staff.emergency_contact_phone}
-        />
-
-        <InfoItem
-          label="Relationship"
-          value={staff.emergency_contact_relation}
-        />
-      </InfoSection>
-
-      {/* =====================================================
-          BANK
-      ====================================================== */}
-
-      <InfoSection title="Bank & Payment Information">
-        <InfoItem
-          label="Bank Name"
-          value={staff.bank_name}
-        />
-
-        <InfoItem
-          label="Account Number"
-          value={staff.bank_account_number}
-        />
-
-        <InfoItem
-          label="IFSC Code"
-          value={staff.bank_ifsc}
-        />
-      </InfoSection>
-
-      {/* =====================================================
-          NOTES
-      ====================================================== */}
-
-      <InfoSection title="Additional Information">
-        <InfoItem
-          label="Notes"
-          value={staff.notes}
-          fullWidth
-        />
-      </InfoSection>
-
-      {/* =====================================================
-          SYSTEM INFORMATION
-      ====================================================== */}
-
-      <InfoSection title="System Information">
-        <InfoItem
-          label="Record Created"
-          value={formatDate(staff.created_at)}
-        />
-
-        <InfoItem
-          label="Last Updated"
-          value={formatDate(staff.updated_at)}
-        />
-
-        <InfoItem
-          label="Database ID"
-          value={staff.id}
-        />
-      </InfoSection>
+          .sections-grid {
+            grid-template-columns: 1fr;
+          }
+          .hero-avatar {
+            width: 56px;
+            height: 56px;
+            font-size: 20px;
+          }
+        }
+      `}</style>
     </div>
   );
 }
 
-
-/* ============================================================
-   INFO SECTION
-============================================================ */
-
-function InfoSection({ title, children }) {
+function InfoSection({ title, icon: Icon, children }) {
   return (
-    <div style={cardStyle}>
-      <h2 style={sectionTitleStyle}>
-        {title}
-      </h2>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "20px",
-        }}
-      >
-        {children}
+    <div className="info-card">
+      <div className="info-card-header">
+        {Icon && (
+          <div className="info-icon-box">
+            <Icon size={16} />
+          </div>
+        )}
+        <h3 className="info-card-title">{title}</h3>
       </div>
+
+      <div className="info-grid">{children}</div>
+
+      <style>{`
+        .info-card {
+          background: #111726;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 16px;
+          padding: 22px;
+          transition: all 0.2s;
+        }
+
+        .info-card:hover {
+          border-color: rgba(99, 102, 241, 0.3);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .info-card-header {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 18px;
+          padding-bottom: 12px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .info-icon-box {
+          width: 30px;
+          height: 30px;
+          border-radius: 8px;
+          background: rgba(99, 102, 241, 0.15);
+          color: #818cf8;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .info-card-title {
+          font-family: 'Outfit', sans-serif;
+          font-size: 16px;
+          font-weight: 700;
+          color: #f1f5f9;
+          margin: 0;
+        }
+
+        .info-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: 16px;
+        }
+      `}</style>
     </div>
   );
 }
 
-
-/* ============================================================
-   INFO ITEM
-============================================================ */
-
-function InfoItem({
-  label,
-  value,
-  fullWidth = false,
-  highlight = false,
-}) {
+function InfoItem({ label, value, fullWidth = false, highlight = false }) {
   return (
-    <div
-      style={{
-        gridColumn: fullWidth
-          ? "1 / -1"
-          : undefined,
-      }}
-    >
-      <div
-        style={{
-          fontSize: "12px",
-          color: "#6b7280",
-          marginBottom: "6px",
-          fontWeight: "600",
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </div>
+    <div className={`info-item ${fullWidth ? "full-width" : ""}`}>
+      <span className="item-label">{label}</span>
+      <span className={`item-value ${highlight ? "item-highlight" : ""}`}>
+        {value !== null && value !== undefined && value !== "" ? value : "—"}
+      </span>
 
-      <div
-        style={{
-          fontSize: "14px",
-          color: highlight
-            ? "#2563eb"
-            : "#172033",
-          fontWeight: highlight ? "700" : "500",
-          whiteSpace: "pre-wrap",
-          wordBreak: "break-word",
-        }}
-      >
-        {value !== null &&
-        value !== undefined &&
-        value !== ""
-          ? value
-          : "—"}
-      </div>
+      <style>{`
+        .info-item {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .info-item.full-width {
+          grid-column: 1 / -1;
+        }
+
+        .item-label {
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          color: #64748b;
+        }
+
+        .item-value {
+          font-size: 13.5px;
+          font-weight: 500;
+          color: #e2e8f0;
+          word-break: break-word;
+        }
+
+        .item-highlight {
+          color: #38bdf8;
+          font-weight: 700;
+          font-size: 17px;
+          font-family: 'Outfit', sans-serif;
+        }
+      `}</style>
     </div>
   );
 }
-
-
-/* ============================================================
-   STATUS
-============================================================ */
 
 function StatusBadge({ status }) {
-  const normalized = (
-    status || "UNKNOWN"
-  ).toUpperCase();
+  const normalized = (status || "UNKNOWN").toUpperCase();
 
-  let background = "#f3f4f6";
-  let color = "#4b5563";
+  let badgeClass = "badge-info";
+  if (normalized === "ACTIVE") badgeClass = "badge-success";
+  if (normalized === "INACTIVE") badgeClass = "badge-secondary";
+  if (normalized === "ON_LEAVE") badgeClass = "badge-warning";
+  if (normalized === "SUSPENDED") badgeClass = "badge-danger";
 
-  if (normalized === "ACTIVE") {
-    background = "#dcfce7";
-    color = "#166534";
-  }
-
-  if (normalized === "INACTIVE") {
-    background = "#f3f4f6";
-    color = "#4b5563";
-  }
-
-  if (normalized === "ON_LEAVE") {
-    background = "#fef3c7";
-    color = "#92400e";
-  }
-
-  if (normalized === "SUSPENDED") {
-    background = "#fee2e2";
-    color = "#991b1b";
-  }
-
-  return (
-    <span
-      style={{
-        padding: "7px 13px",
-        borderRadius: "20px",
-        background,
-        color,
-        fontSize: "12px",
-        fontWeight: "700",
-      }}
-    >
-      {normalized}
-    </span>
-  );
+  return <span className={`status-pill ${badgeClass}`}>{normalized}</span>;
 }
 
-
-/* ============================================================
-   HELPERS
-============================================================ */
-
 function formatEmploymentType(value) {
-  if (!value) {
-    return "—";
-  }
-
+  if (!value) return "—";
   return value
     .toLowerCase()
     .replace(/_/g, " ")
-    .replace(/\b\w/g, (letter) =>
-      letter.toUpperCase()
-    );
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function calculateNetSalary(staff) {
   const basic = Number(staff.basic_salary || 0);
   const allowances = Number(staff.allowances || 0);
   const deductions = Number(staff.deductions || 0);
-
   return basic + allowances - deductions;
 }
-
-
-/* ============================================================
-   STYLES
-============================================================ */
-
-const pageStyle = {
-  minHeight: "100vh",
-  background: "#f7f8fc",
-  padding: "30px",
-};
-
-const titleStyle = {
-  margin: 0,
-  fontSize: "28px",
-  color: "#172033",
-};
-
-const subtitleStyle = {
-  margin: "6px 0 0",
-  color: "#6b7280",
-  fontSize: "14px",
-};
-
-const cardStyle = {
-  background: "#ffffff",
-  border: "1px solid #e5e7eb",
-  borderRadius: "12px",
-  padding: "22px",
-  marginBottom: "20px",
-};
-
-const sectionTitleStyle = {
-  margin: "0 0 20px",
-  fontSize: "18px",
-  color: "#172033",
-};
-
-const avatarStyle = {
-  width: "70px",
-  height: "70px",
-  borderRadius: "50%",
-  background: "#e8eefc",
-  color: "#2563eb",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: "22px",
-  fontWeight: "700",
-};
-
-const backButtonStyle = {
-  border: "1px solid #d1d5db",
-  background: "#ffffff",
-  color: "#374151",
-  padding: "9px 14px",
-  borderRadius: "7px",
-  cursor: "pointer",
-  fontSize: "14px",
-};
-
-const editButtonStyle = {
-  border: "none",
-  background: "#2563eb",
-  color: "#ffffff",
-  padding: "10px 16px",
-  borderRadius: "7px",
-  cursor: "pointer",
-  fontSize: "13px",
-  fontWeight: "600",
-};
-
-const deleteButtonStyle = {
-  border: "1px solid #fecaca",
-  background: "#ffffff",
-  color: "#dc2626",
-  padding: "10px 16px",
-  borderRadius: "7px",
-  cursor: "pointer",
-  fontSize: "13px",
-  fontWeight: "600",
-};
-
-const loadingStyle = {
-  background: "#ffffff",
-  borderRadius: "12px",
-  padding: "60px",
-  textAlign: "center",
-  color: "#6b7280",
-};
-
-const emptyStyle = {
-  background: "#ffffff",
-  borderRadius: "12px",
-  padding: "60px",
-  textAlign: "center",
-  color: "#6b7280",
-};
-
-const errorStyle = {
-  background: "#fef2f2",
-  border: "1px solid #fecaca",
-  color: "#b91c1c",
-  padding: "14px 16px",
-  borderRadius: "8px",
-  marginBottom: "20px",
-};

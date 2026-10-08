@@ -1,145 +1,138 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import AppLayout from "../components/AppLayout";
 import { API_BASE_URL } from "../api/config";
+import {
+  BookOpen,
+  CheckCircle2,
+  Circle,
+  Sparkles,
+  Bot,
+  PlayCircle,
+  Award,
+  AlertCircle,
+  ArrowRight,
+  Flame,
+  Check
+} from "lucide-react";
 
-function Learning() {
+export default function Learning() {
   const navigate = useNavigate();
-
   const courseId = 1;
 
   const lessons = [
     {
       number: 1,
-      title: "Introduction to Python",
-      description:
-        "Learn what Python is, why it is popular, and where it is used.",
+      title: "Introduction to Python Architecture",
+      description: "Learn Python design principles, runtime execution, and syntax conventions.",
       topics: [
         "What is Python?",
-        "Installing Python",
-        "Running your first Python program",
-        "Python syntax",
+        "Setting up Virtual Environments",
+        "Running your first script",
+        "Basic syntactic structure",
       ],
     },
     {
       number: 2,
-      title: "Variables and Data Types",
-      description:
-        "Learn how Python stores information using variables and different data types.",
+      title: "Variables and Data Typings",
+      description: "How Python allocates memory and handles primitive data types dynamically.",
       topics: [
-        "Creating variables",
-        "Strings",
-        "Integers and floats",
-        "Boolean values",
+        "Variable instantiation",
+        "Strings and string interpolation",
+        "Integers and floating points",
+        "Boolean logic and truthiness",
       ],
     },
     {
       number: 3,
-      title: "Conditions and Loops",
-      description:
-        "Learn how to make decisions and repeat tasks in Python programs.",
+      title: "Conditional Flow and Iteration",
+      description: "Branching execution paths with conditionals and loops.",
       topics: [
-        "if statements",
-        "else and elif",
-        "for loops",
-        "while loops",
+        "if, elif, and else logic",
+        "Ternary operator expressions",
+        "for loops with range generators",
+        "while loops and break / continue controls",
       ],
     },
     {
       number: 4,
-      title: "Functions",
-      description:
-        "Learn how to create reusable blocks of code using functions.",
+      title: "Modular Functions and Scoping",
+      description: "Encapsulating reusable logic, return contracts, and parameter types.",
       topics: [
-        "Creating functions",
-        "Function parameters",
-        "Return values",
-        "Reusable code",
+        "def statements and arguments",
+        "Positional and keyword arguments",
+        "Return statements and tuples",
+        "Variable scope and closures",
       ],
     },
     {
       number: 5,
-      title: "Lists, Tuples and Dictionaries",
-      description:
-        "Learn how to store and organize multiple pieces of information.",
+      title: "Data Collections (Lists, Dicts, Tuples)",
+      description: "Composite data structures, fast key lookups, and iteration idioms.",
       topics: [
-        "Lists",
-        "Tuples",
-        "Dictionaries",
-        "Working with collections",
+        "List indexing and slicing",
+        "Immutable Tuples",
+        "Dictionary hash map lookups",
+        "List and dictionary comprehensions",
       ],
     },
     {
       number: 6,
-      title: "Files and Exceptions",
-      description:
-        "Learn how to work with files and handle errors in Python programs.",
+      title: "I/O File Operations and Exception Handling",
+      description: "Stream manipulation, persistent disk storage, and graceful error catching.",
       topics: [
-        "Reading files",
-        "Writing files",
-        "try and except",
-        "Handling errors",
+        "with open context managers",
+        "Reading and writing text & JSON",
+        "try, except, and finally blocks",
+        "Custom exception classes",
       ],
     },
     {
       number: 7,
-      title: "Object-Oriented Programming",
-      description:
-        "Learn the basics of classes and objects in Python.",
+      title: "Object-Oriented Architecture (OOP)",
+      description: "Domain modeling with classes, instances, inheritance, and encapsulation.",
       topics: [
-        "Classes",
-        "Objects",
-        "Methods",
-        "Inheritance basics",
+        "Class blueprints and __init__",
+        "Instance vs class attributes",
+        "Methods and self binding",
+        "Inheritance and method overriding",
       ],
     },
     {
       number: 8,
-      title: "Python Project and Final Practice",
-      description:
-        "Use everything you learned to build a simple Python project.",
+      title: "Capstone Project and Production Practice",
+      description: "Synthesize all concepts into an autonomous command-line utility.",
       topics: [
-        "Planning a project",
-        "Writing the program",
-        "Testing your code",
-        "Final practice",
+        "Architecting software requirements",
+        "Implementing core modules",
+        "Unit testing with pytest",
+        "Final code review with AI Copilot",
       ],
     },
   ];
 
   const [completedLessons, setCompletedLessons] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [completingLesson, setCompletingLesson] =
-    useState(null);
+  const [completingLesson, setCompletingLesson] = useState(null);
   const [error, setError] = useState("");
 
-  const progress =
-    (completedLessons.length / lessons.length) * 100;
+  const progressPercent = Math.round((completedLessons.length / lessons.length) * 100);
 
   useEffect(() => {
     const loadProgress = async () => {
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/courses/${courseId}/progress`
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to load progress");
-        }
-
+        setLoading(true);
+        setError("");
+        const response = await fetch(`${API_BASE_URL}/courses/${courseId}/progress`);
+        if (!response.ok) throw new Error("Failed to load progress");
         const data = await response.json();
-
         if (data.completed_lessons) {
           setCompletedLessons(data.completed_lessons);
         }
-
-        setLoading(false);
-      } catch (error) {
-        console.error(error);
-
-        setError(
-          "Unable to load course progress."
-        );
-
+      } catch (err) {
+        console.error("Learning progress error:", err);
+        setError("Unable to synchronize lesson completion status.");
+      } finally {
         setLoading(false);
       }
     };
@@ -148,1312 +141,283 @@ function Learning() {
   }, []);
 
   const handleCompleteLesson = async (lessonNumber) => {
-    if (completedLessons.includes(lessonNumber)) {
-      return;
-    }
-
+    if (completedLessons.includes(lessonNumber)) return;
     setCompletingLesson(lessonNumber);
     setError("");
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/courses/${courseId}/complete`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            lesson_number: lessonNumber,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          "Failed to complete lesson"
-        );
-      }
-
-      setCompletedLessons((previous) => {
-        if (previous.includes(lessonNumber)) {
-          return previous;
-        }
-
-        return [...previous, lessonNumber];
+      const response = await fetch(`${API_BASE_URL}/courses/${courseId}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lesson_number: lessonNumber }),
       });
-    } catch (error) {
-      console.error(error);
 
-      setError(
-        "Unable to save lesson progress."
-      );
+      if (!response.ok) throw new Error("Failed to record lesson completion");
+      setCompletedLessons((prev) => (prev.includes(lessonNumber) ? prev : [...prev, lessonNumber]));
+    } catch (err) {
+      console.error("Complete lesson error:", err);
+      setError("Unable to save completion milestone.");
     } finally {
       setCompletingLesson(null);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="learning-loading">
-        <style>{`
-          * {
-            box-sizing: border-box;
-          }
-
-          body {
-            margin: 0;
-          }
-
-          .learning-loading {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f8fafc;
-            font-family:
-              Inter,
-              -apple-system,
-              BlinkMacSystemFont,
-              "Segoe UI",
-              Arial,
-              sans-serif;
-          }
-
-          .loading-box {
-            width: 220px;
-            padding: 28px;
-            text-align: center;
-            background: #ffffff;
-            border: 1px solid #e4e7ec;
-            border-radius: 16px;
-            box-shadow:
-              0 10px 30px rgba(16, 24, 40, 0.06);
-          }
-
-          .spinner {
-            width: 38px;
-            height: 38px;
-            margin: 0 auto 14px;
-            border: 3px solid #e7edf5;
-            border-top-color: #2563eb;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-          }
-
-          .loading-title {
-            margin: 0;
-            color: #101828;
-            font-size: 12px;
-            font-weight: 750;
-          }
-
-          .loading-text {
-            margin: 5px 0 0;
-            color: #98a2b3;
-            font-size: 9px;
-          }
-
-          @keyframes spin {
-            to {
-              transform: rotate(360deg);
-            }
-          }
-        `}</style>
-
-        <div className="loading-box">
-          <div className="spinner" />
-
-          <p className="loading-title">
-            Loading learning path
-          </p>
-
-          <p className="loading-text">
-            Preparing your lessons...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="learning-page">
-      <style>{`
-        * {
-          box-sizing: border-box;
-        }
-
-        body {
-          margin: 0;
-          background: #f8fafc;
-        }
-
-        button {
-          font-family: inherit;
-        }
-
-        .learning-page {
-          min-height: 100vh;
-          background: #f8fafc;
-          color: #101828;
-          font-family:
-            Inter,
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
-            Arial,
-            sans-serif;
-        }
-
-        /* =========================
-           TOP HEADER
-        ========================= */
-
-        .learning-header {
-          height: 70px;
-          background: #ffffff;
-          border-bottom: 1px solid #eaecf0;
-
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-
-          padding: 0 42px;
-
-          position: sticky;
-          top: 0;
-          z-index: 50;
-        }
-
-        .learning-brand {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          cursor: pointer;
-        }
-
-        .brand-mark {
-          width: 34px;
-          height: 34px;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          border-radius: 9px;
-
-          background:
-            linear-gradient(
-              135deg,
-              #2563eb,
-              #4f46e5
-            );
-
-          color: #ffffff;
-          font-size: 15px;
-          font-weight: 850;
-
-          box-shadow:
-            0 5px 12px
-            rgba(37, 99, 235, 0.16);
-        }
-
-        .brand-name {
-          color: #101828;
-          font-size: 15px;
-          font-weight: 800;
-          letter-spacing: -0.4px;
-        }
-
-        .brand-name span {
-          color: #2563eb;
-        }
-
-        .brand-caption {
-          margin-top: 2px;
-          color: #98a2b3;
-          font-size: 7px;
-          font-weight: 700;
-          letter-spacing: 0.7px;
-        }
-
-        .header-actions {
-          display: flex;
-          align-items: center;
-          gap: 9px;
-        }
-
-        .header-button {
-          padding: 8px 13px;
-
-          border: 1px solid #dfe4ea;
-          border-radius: 8px;
-
-          background: #ffffff;
-          color: #475467;
-
-          font-size: 9px;
-          font-weight: 750;
-
-          cursor: pointer;
-
-          transition: 0.18s ease;
-        }
-
-        .header-button:hover {
-          color: #2563eb;
-          border-color: #bfd3f2;
-          background: #f8fbff;
-        }
-
-        /* =========================
-           PAGE CONTENT
-        ========================= */
-
-        .learning-content {
-          max-width: 1160px;
-          margin: 0 auto;
-          padding: 32px 38px 55px;
-        }
-
-        .breadcrumb {
-          display: flex;
-          align-items: center;
-          gap: 7px;
-
-          margin-bottom: 20px;
-
-          color: #98a2b3;
-          font-size: 9px;
-          font-weight: 650;
-        }
-
-        .breadcrumb button {
-          padding: 0;
-          border: none;
-          background: transparent;
-
-          color: #667085;
-          font-size: 9px;
-          font-weight: 750;
-
-          cursor: pointer;
-        }
-
-        .breadcrumb button:hover {
-          color: #2563eb;
-        }
-
-        .breadcrumb-arrow {
-          color: #d0d5dd;
-        }
-
-        /* =========================
-           HERO
-        ========================= */
-
-        .learning-hero {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) 260px;
-          gap: 18px;
-
-          margin-bottom: 24px;
-        }
-
-        .hero-main {
-          position: relative;
-          overflow: hidden;
-
-          min-height: 225px;
-          padding: 28px;
-
-          border: 1px solid #dfe6ef;
-          border-radius: 18px;
-
-          background:
-            linear-gradient(
-              135deg,
-              #f5f9ff 0%,
-              #eef3fb 100%
-            );
-
-          box-shadow:
-            0 4px 18px
-            rgba(16, 24, 40, 0.035);
-        }
-
-        .hero-main::before {
-          content: "";
-
-          position: absolute;
-
-          width: 260px;
-          height: 260px;
-
-          right: -100px;
-          top: -135px;
-
-          border-radius: 50%;
-
-          background:
-            rgba(37, 99, 235, 0.06);
-        }
-
-        .hero-main::after {
-          content: "";
-
-          position: absolute;
-
-          width: 130px;
-          height: 130px;
-
-          right: 45px;
-          bottom: -85px;
-
-          border-radius: 50%;
-
-          background:
-            rgba(79, 70, 229, 0.035);
-        }
-
-        .hero-content {
-          position: relative;
-          z-index: 2;
-        }
-
-        .course-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-
-          padding: 6px 10px;
-
-          border: 1px solid #d6e2f2;
-          border-radius: 7px;
-
-          background: rgba(255, 255, 255, 0.8);
-
-          color: #2563eb;
-
-          font-size: 8px;
-          font-weight: 800;
-
-          text-transform: uppercase;
-          letter-spacing: 0.6px;
-        }
-
-        .course-pill-dot {
-          width: 5px;
-          height: 5px;
-          border-radius: 50%;
-          background: #2563eb;
-        }
-
-        .hero-title {
-          max-width: 600px;
-
-          margin: 16px 0 9px;
-
-          color: #101828;
-
-          font-size: 29px;
-          line-height: 1.18;
-          font-weight: 850;
-
-          letter-spacing: -1px;
-        }
-
-        .hero-description {
-          max-width: 620px;
-
-          margin: 0;
-
-          color: #667085;
-
-          font-size: 10px;
-          line-height: 1.7;
-        }
-
-        .hero-meta {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px 18px;
-
-          margin-top: 20px;
-        }
-
-        .hero-meta-item {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-
-          color: #667085;
-
-          font-size: 8px;
-          font-weight: 700;
-        }
-
-        .hero-meta-icon {
-          color: #2563eb;
-          font-size: 11px;
-        }
-
-        /* =========================
-           PROGRESS CARD
-        ========================= */
-
-        .progress-card {
-          background: #ffffff;
-
-          border: 1px solid #e1e6ed;
-          border-radius: 18px;
-
-          padding: 22px;
-
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-
-          text-align: center;
-
-          box-shadow:
-            0 4px 18px
-            rgba(16, 24, 40, 0.035);
-        }
-
-        .progress-card-label {
-          color: #98a2b3;
-
-          font-size: 8px;
-          font-weight: 800;
-
-          text-transform: uppercase;
-          letter-spacing: 0.8px;
-        }
-
-        .progress-circle {
-          width: 128px;
-          height: 128px;
-
-          margin: 13px 0;
-
-          border-radius: 50%;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          position: relative;
-        }
-
-        .progress-circle::after {
-          content: "";
-
-          position: absolute;
-
-          width: 99px;
-          height: 99px;
-
-          border-radius: 50%;
-
-          background: #ffffff;
-        }
-
-        .progress-number {
-          position: relative;
-          z-index: 2;
-
-          color: #101828;
-
-          font-size: 25px;
-          font-weight: 850;
-        }
-
-        .progress-status {
-          color: #344054;
-
-          font-size: 9px;
-          font-weight: 750;
-        }
-
-        .progress-lessons {
-          margin-top: 4px;
-
-          color: #98a2b3;
-
-          font-size: 8px;
-        }
-
-        /* =========================
-           ERROR
-        ========================= */
-
-        .error-message {
-          margin-bottom: 18px;
-
-          padding: 11px 14px;
-
-          border: 1px solid #fecaca;
-          border-radius: 9px;
-
-          background: #fff7f7;
-
-          color: #b91c1c;
-
-          font-size: 9px;
-          font-weight: 650;
-        }
-
-        /* =========================
-           CURRICULUM HEADER
-        ========================= */
-
-        .lessons-heading {
-          display: flex;
-          align-items: flex-end;
-          justify-content: space-between;
-
-          margin-bottom: 13px;
-        }
-
-        .heading-label {
-          margin-bottom: 5px;
-
-          color: #2563eb;
-
-          font-size: 8px;
-          font-weight: 850;
-
-          text-transform: uppercase;
-          letter-spacing: 0.8px;
-        }
-
-        .lessons-heading h2 {
-          margin: 0;
-
-          color: #101828;
-
-          font-size: 19px;
-          font-weight: 820;
-
-          letter-spacing: -0.4px;
-        }
-
-        .lesson-count {
-          color: #98a2b3;
-
-          font-size: 9px;
-          font-weight: 650;
-        }
-
-        /* =========================
-           LESSON CARDS
-        ========================= */
-
-        .lesson-card {
-          margin-bottom: 11px;
-
-          background: #ffffff;
-
-          border: 1px solid #e4e7ec;
-          border-radius: 14px;
-
-          overflow: hidden;
-
-          box-shadow:
-            0 2px 10px
-            rgba(16, 24, 40, 0.025);
-
-          transition:
-            transform 0.18s ease,
-            border-color 0.18s ease,
-            box-shadow 0.18s ease;
-        }
-
-        .lesson-card:hover {
-          transform: translateY(-1px);
-
-          border-color: #d4deeb;
-
-          box-shadow:
-            0 7px 20px
-            rgba(16, 24, 40, 0.05);
-        }
-
-        .lesson-card.completed {
-          border-color: #c7e8d0;
-        }
-
-        .lesson-top {
-          display: flex;
-          align-items: center;
-          gap: 13px;
-
-          padding: 17px 18px;
-        }
-
-        .lesson-number {
-          width: 40px;
-          height: 40px;
-
-          flex-shrink: 0;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          border-radius: 11px;
-
-          background: #f1f6fd;
-          border: 1px solid #dfe8f4;
-
-          color: #2563eb;
-
-          font-size: 12px;
-          font-weight: 850;
-        }
-
-        .lesson-card.completed .lesson-number {
-          background: #ecfdf3;
-          border-color: #c9ecd3;
-          color: #16a34a;
-        }
-
-        .lesson-heading {
-          min-width: 0;
-          flex: 1;
-        }
-
-        .lesson-label {
-          margin-bottom: 3px;
-
-          color: #98a2b3;
-
-          font-size: 7px;
-          font-weight: 850;
-
-          text-transform: uppercase;
-          letter-spacing: 0.65px;
-        }
-
-        .lesson-title {
-          margin: 0;
-
-          color: #172033;
-
-          font-size: 13px;
-          line-height: 1.3;
-          font-weight: 800;
-        }
-
-        .completed-badge {
-          flex-shrink: 0;
-
-          padding: 5px 9px;
-
-          border: 1px solid #c9ecd3;
-          border-radius: 20px;
-
-          background: #ecfdf3;
-
-          color: #16a34a;
-
-          font-size: 7px;
-          font-weight: 850;
-
-          white-space: nowrap;
-        }
-
-        .lesson-divider {
-          height: 1px;
-          background: #f0f2f5;
-        }
-
-        .lesson-body {
-          padding: 17px 18px 18px 71px;
-        }
-
-        .lesson-description {
-          max-width: 780px;
-
-          margin: 0 0 14px;
-
-          color: #667085;
-
-          font-size: 9px;
-          line-height: 1.65;
-        }
-
-        .topics-label {
-          margin-bottom: 8px;
-
-          color: #344054;
-
-          font-size: 8px;
-          font-weight: 800;
-        }
-
-        .topics {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-
-          gap: 7px;
-
-          margin-bottom: 16px;
-        }
-
-        .topic {
-          display: flex;
-          align-items: center;
-          gap: 7px;
-
-          min-height: 24px;
-
-          color: #667085;
-
-          font-size: 8px;
-          line-height: 1.4;
-        }
-
-        .topic-dot {
-          width: 5px;
-          height: 5px;
-
-          flex-shrink: 0;
-
-          border-radius: 50%;
-
-          background: #2563eb;
-        }
-
-        .complete-button {
-          min-width: 170px;
-
-          padding: 9px 13px;
-
-          border: none;
-          border-radius: 8px;
-
-          background:
-            linear-gradient(
-              135deg,
-              #2563eb,
-              #4f46e5
-            );
-
-          color: #ffffff;
-
-          font-size: 9px;
-          font-weight: 750;
-
-          cursor: pointer;
-
-          box-shadow:
-            0 4px 10px
-            rgba(37, 99, 235, 0.12);
-
-          transition:
-            transform 0.18s ease,
-            box-shadow 0.18s ease,
-            opacity 0.18s ease;
-        }
-
-        .complete-button:hover:not(:disabled) {
-          transform: translateY(-1px);
-
-          box-shadow:
-            0 7px 14px
-            rgba(37, 99, 235, 0.18);
-        }
-
-        .complete-button.completed-button {
-          background: #16a34a;
-          box-shadow: none;
-          cursor: default;
-        }
-
-        .complete-button:disabled {
-          opacity: 0.75;
-          cursor: default;
-        }
-
-        /* =========================
-           COMPLETION BANNER
-        ========================= */
-
-        .completion-banner {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 18px;
-
-          margin-top: 19px;
-          padding: 19px 21px;
-
-          border: 1px solid #b7e4c3;
-          border-radius: 14px;
-
-          background:
-            linear-gradient(
-              135deg,
-              #f1fcf4,
-              #ecfdf3
-            );
-        }
-
-        .completion-content {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .completion-icon {
-          width: 42px;
-          height: 42px;
-
-          flex-shrink: 0;
-
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          border-radius: 50%;
-
-          background: #dcfce7;
-
-          font-size: 18px;
-        }
-
-        .completion-title {
-          margin: 0;
-
-          color: #166534;
-
-          font-size: 13px;
-          font-weight: 800;
-        }
-
-        .completion-text {
-          margin: 4px 0 0;
-
-          color: #4d7c5a;
-
-          font-size: 8px;
-        }
-
-        .dashboard-link {
-          flex-shrink: 0;
-
-          padding: 9px 14px;
-
-          border: 1px solid #b7e4c3;
-          border-radius: 8px;
-
-          background: #ffffff;
-
-          color: #166534;
-
-          font-size: 9px;
-          font-weight: 750;
-
-          cursor: pointer;
-        }
-
-        .dashboard-link:hover {
-          background: #f5fff7;
-        }
-
-        /* =========================
-           RESPONSIVE
-        ========================= */
-
-        @media (max-width: 850px) {
-          .learning-hero {
-            grid-template-columns: 1fr;
-          }
-
-          .progress-card {
-            min-height: 210px;
-          }
-        }
-
-        @media (max-width: 650px) {
-          .learning-header {
-            padding: 0 18px;
-          }
-
-          .learning-content {
-            padding: 25px 18px 40px;
-          }
-
-          .brand-caption {
-            display: none;
-          }
-
-          .hero-main {
-            padding: 23px;
-          }
-
-          .hero-title {
-            font-size: 24px;
-          }
-
-          .completed-badge {
-            display: none;
-          }
-
-          .lesson-body {
-            padding: 16px 18px 18px;
-          }
-
-          .topics {
-            grid-template-columns: 1fr;
-          }
-
-          .completion-banner {
-            align-items: flex-start;
-            flex-direction: column;
-          }
-
-          .dashboard-link {
-            width: 100%;
-          }
-        }
-
-        @media (max-width: 430px) {
-          .learning-header {
-            height: 64px;
-          }
-
-          .brand-name {
-            font-size: 14px;
-          }
-
-          .header-button {
-            padding: 7px 9px;
-            font-size: 8px;
-          }
-
-          .learning-content {
-            padding: 21px 13px 35px;
-          }
-
-          .hero-title {
-            font-size: 22px;
-          }
-
-          .hero-description {
-            font-size: 9px;
-          }
-        }
-      `}</style>
-
-      {/* =========================
-          HEADER
-      ========================= */}
-
-      <header className="learning-header">
-        <div
-          className="learning-brand"
-          onClick={() => navigate("/dashboard")}
+    <AppLayout
+      title="Interactive Learning Engine"
+      subtitle="Structured mastery syllabus, concept breakdown, and milestone verification."
+      actions={
+        <button
+          onClick={() => navigate("/ai-tutor")}
+          className="btn btn-primary"
+          style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
         >
-          <div className="brand-mark">E</div>
-
+          <Bot size={16} />
+          Ask Neural Tutor
+        </button>
+      }
+    >
+      {/* HERO / PROGRESS STRIP */}
+      <div
+        className="card"
+        style={{
+          padding: "24px",
+          marginBottom: "24px",
+          background: "linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%)",
+          border: "1px solid rgba(99, 102, 241, 0.25)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
           <div>
-            <div className="brand-name">
-              edu<span>nexus.ai</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
+              <span
+                style={{
+                  padding: "4px 10px",
+                  borderRadius: "999px",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  background: "rgba(6, 182, 212, 0.15)",
+                  color: "var(--accent-cyan)",
+                  border: "1px solid rgba(6, 182, 212, 0.3)",
+                  textTransform: "uppercase",
+                }}
+              >
+                Track 01 • Python Foundations
+              </span>
+              <span style={{ fontSize: "12px", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: "4px" }}>
+                <Flame size={14} style={{ color: "var(--accent-amber)" }} /> 8 Core Lessons
+              </span>
             </div>
-
-            <div className="brand-caption">
-              AI LEARNING PLATFORM
-            </div>
-          </div>
-        </div>
-
-        <div className="header-actions">
-          <button
-            className="header-button"
-            onClick={() => navigate("/dashboard")}
-          >
-            Dashboard
-          </button>
-
-          <button
-            className="header-button"
-            onClick={() => navigate("/courses")}
-          >
-            ← Courses
-          </button>
-        </div>
-      </header>
-
-      {/* =========================
-          CONTENT
-      ========================= */}
-
-      <main className="learning-content">
-        <div className="breadcrumb">
-          <button
-            onClick={() => navigate("/courses")}
-          >
-            Courses
-          </button>
-
-          <span className="breadcrumb-arrow">
-            /
-          </span>
-
-          <span>Learning Path</span>
-        </div>
-
-        {/* =========================
-            HERO
-        ========================= */}
-
-        <section className="learning-hero">
-          <div className="hero-main">
-            <div className="hero-content">
-              <div className="course-pill">
-                <span className="course-pill-dot" />
-                Python Programming
-              </div>
-
-              <h1 className="hero-title">
-                Your Learning Path
-              </h1>
-
-              <p className="hero-description">
-                Welcome to your complete Python
-                learning course. Work through each
-                lesson step by step and build your
-                programming skills.
-              </p>
-
-              <div className="hero-meta">
-                <div className="hero-meta-item">
-                  <span className="hero-meta-icon">
-                    📚
-                  </span>
-                  8 Lessons
-                </div>
-
-                <div className="hero-meta-item">
-                  <span className="hero-meta-icon">
-                    🎯
-                  </span>
-                  Practical Learning
-                </div>
-
-                <div className="hero-meta-item">
-                  <span className="hero-meta-icon">
-                    ✦
-                  </span>
-                  AI Supported
-                </div>
-              </div>
-            </div>
+            <h2 style={{ margin: "0 0 6px", fontSize: "22px", fontWeight: 800, color: "var(--text-bright)" }}>
+              Modern Python Programming
+            </h2>
+            <p style={{ margin: 0, fontSize: "13.5px", color: "var(--text-secondary)", maxWidth: "560px" }}>
+              Master clean Python syntax, data structures, functional paradigms, and object-oriented architecture.
+            </p>
           </div>
 
-          <div className="progress-card">
-            <div className="progress-card-label">
-              Course Progress
+          <div
+            style={{
+              minWidth: "220px",
+              background: "rgba(0, 0, 0, 0.3)",
+              padding: "16px 20px",
+              borderRadius: "12px",
+              border: "1px solid var(--border-default)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12.5px", marginBottom: "8px" }}>
+              <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>Track Mastery</span>
+              <span style={{ color: progressPercent === 100 ? "var(--accent-emerald)" : "var(--accent-cyan)", fontWeight: 800 }}>
+                {progressPercent}%
+              </span>
             </div>
-
             <div
-              className="progress-circle"
               style={{
-                background: `conic-gradient(
-                  #2563eb
-                  ${progress}%,
-                  #e8edf3
-                  ${progress}% 100%
-                )`,
+                width: "100%",
+                height: "8px",
+                borderRadius: "999px",
+                background: "rgba(255, 255, 255, 0.08)",
+                overflow: "hidden",
+                marginBottom: "8px",
               }}
             >
-              <div className="progress-number">
-                {Math.round(progress)}%
-              </div>
+              <div
+                style={{
+                  width: `${progressPercent}%`,
+                  height: "100%",
+                  borderRadius: "999px",
+                  background: progressPercent === 100
+                    ? "linear-gradient(90deg, #10b981, #34d399)"
+                    : "linear-gradient(90deg, #6366f1, #06b6d4)",
+                  transition: "width 0.4s ease",
+                }}
+              />
             </div>
-
-            <div className="progress-status">
-              {progress === 100
-                ? "Course completed"
-                : "Keep going"}
+            <div style={{ fontSize: "11.5px", color: "var(--text-muted)", textAlign: "right" }}>
+              {completedLessons.length} of {lessons.length} milestones complete
             </div>
-
-            <div className="progress-lessons">
-              {completedLessons.length} of{" "}
-              {lessons.length} lessons completed
-            </div>
-          </div>
-        </section>
-
-        {/* =========================
-            ERROR
-        ========================= */}
-
-        {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
-
-        {/* =========================
-            LESSON HEADER
-        ========================= */}
-
-        <div className="lessons-heading">
-          <div>
-            <div className="heading-label">
-              Curriculum
-            </div>
-
-            <h2>Course Lessons</h2>
-          </div>
-
-          <div className="lesson-count">
-            {completedLessons.length}/
-            {lessons.length} completed
           </div>
         </div>
+      </div>
 
-        {/* =========================
-            LESSONS
-        ========================= */}
+      {/* ERROR ALERT */}
+      {error && (
+        <div
+          style={{
+            background: "rgba(239, 68, 68, 0.12)",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+            borderRadius: "12px",
+            padding: "16px 20px",
+            marginBottom: "20px",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            color: "#f87171",
+          }}
+        >
+          <AlertCircle size={18} />
+          <span style={{ fontSize: "13.5px" }}>{error}</span>
+        </div>
+      )}
 
-        <section>
+      {/* LESSONS GRID */}
+      {loading ? (
+        <div style={{ padding: "80px 20px", textAlign: "center" }}>
+          <div
+            style={{
+              width: "36px",
+              height: "36px",
+              border: "3px solid rgba(255, 255, 255, 0.1)",
+              borderTopColor: "var(--accent-indigo)",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+              margin: "0 auto 16px",
+            }}
+          />
+          <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>Loading learning modules...</p>
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+            gap: "20px",
+          }}
+        >
           {lessons.map((lesson) => {
-            const isCompleted =
-              completedLessons.includes(
-                lesson.number
-              );
-
-            const isCompleting =
-              completingLesson === lesson.number;
+            const isCompleted = completedLessons.includes(lesson.number);
+            const isSavingThis = completingLesson === lesson.number;
 
             return (
-              <article
+              <div
                 key={lesson.number}
-                className={
-                  isCompleted
-                    ? "lesson-card completed"
-                    : "lesson-card"
-                }
+                className="card"
+                style={{
+                  padding: "24px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  borderColor: isCompleted ? "rgba(16, 185, 129, 0.3)" : "var(--border-default)",
+                  background: isCompleted
+                    ? "linear-gradient(180deg, rgba(16, 185, 129, 0.04) 0%, var(--bg-surface) 100%)"
+                    : "var(--bg-surface)",
+                  transition: "transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-3px)";
+                  e.currentTarget.style.boxShadow = "0 12px 30px rgba(0, 0, 0, 0.35)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
               >
-                <div className="lesson-top">
-                  <div className="lesson-number">
-                    {isCompleted
-                      ? "✓"
-                      : lesson.number}
-                  </div>
-
-                  <div className="lesson-heading">
-                    <div className="lesson-label">
-                      Lesson {lesson.number}
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span
+                        style={{
+                          width: "28px",
+                          height: "28px",
+                          borderRadius: "8px",
+                          background: isCompleted ? "rgba(16, 185, 129, 0.2)" : "rgba(99, 102, 241, 0.15)",
+                          color: isCompleted ? "var(--accent-emerald)" : "var(--accent-indigo-light)",
+                          border: isCompleted ? "1px solid rgba(16, 185, 129, 0.4)" : "1px solid rgba(99, 102, 241, 0.3)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "13px",
+                          fontWeight: 800,
+                          fontFamily: "var(--font-mono)",
+                        }}
+                      >
+                        {lesson.number}
+                      </span>
+                      <span style={{ fontSize: "12px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+                        Lesson {lesson.number}
+                      </span>
                     </div>
 
-                    <h3 className="lesson-title">
-                      {lesson.title}
-                    </h3>
-                  </div>
-
-                  {isCompleted && (
-                    <div className="completed-badge">
-                      ✓ Completed
-                    </div>
-                  )}
-                </div>
-
-                <div className="lesson-divider" />
-
-                <div className="lesson-body">
-                  <p className="lesson-description">
-                    {lesson.description}
-                  </p>
-
-                  <div className="topics-label">
-                    What you'll learn
-                  </div>
-
-                  <div className="topics">
-                    {lesson.topics.map(
-                      (topic, index) => (
-                        <div
-                          className="topic"
-                          key={index}
-                        >
-                          <span className="topic-dot" />
-                          {topic}
-                        </div>
-                      )
+                    {isCompleted ? (
+                      <span className="badge badge-success" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                        <Check size={12} /> Complete
+                      </span>
+                    ) : (
+                      <span className="badge badge-warning">Pending</span>
                     )}
                   </div>
 
+                  <h3 style={{ margin: "0 0 8px", fontSize: "16px", fontWeight: 700, color: "var(--text-bright)" }}>
+                    {lesson.title}
+                  </h3>
+                  <p style={{ margin: "0 0 18px", fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.55 }}>
+                    {lesson.description}
+                  </p>
+
+                  <div style={{ marginBottom: "20px" }}>
+                    <div style={{ fontSize: "11.5px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "8px" }}>
+                      Key Topics Covered:
+                    </div>
+                    <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "12.5px", color: "var(--text-secondary)", lineHeight: 1.7 }}>
+                      {lesson.topics.map((t, idx) => (
+                        <li key={idx}>{t}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
                   <button
-                    className={
-                      isCompleted
-                        ? "complete-button completed-button"
-                        : "complete-button"
-                    }
-                    onClick={() =>
-                      handleCompleteLesson(
-                        lesson.number
-                      )
-                    }
-                    disabled={
-                      isCompleted ||
-                      isCompleting
-                    }
+                    onClick={() => handleCompleteLesson(lesson.number)}
+                    disabled={isCompleted || isSavingThis}
+                    className={isCompleted ? "btn btn-secondary" : "btn btn-primary"}
+                    style={{ flex: 1, justifyContent: "center", fontSize: "13px" }}
                   >
-                    {isCompleting
-                      ? "Saving..."
-                      : isCompleted
-                      ? "Completed ✓"
-                      : `Complete Lesson ${lesson.number}`}
+                    {isCompleted ? (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                        <CheckCircle2 size={15} style={{ color: "var(--accent-emerald)" }} /> Completed
+                      </span>
+                    ) : isSavingThis ? (
+                      "Recording..."
+                    ) : (
+                      "Mark Complete"
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => navigate("/ai-tutor")}
+                    title="Ask AI Tutor about this lesson"
+                    className="btn btn-secondary"
+                    style={{ padding: "0 12px" }}
+                  >
+                    <Bot size={16} />
                   </button>
                 </div>
-              </article>
+              </div>
             );
           })}
-        </section>
-
-        {/* =========================
-            COMPLETION
-        ========================= */}
-
-        {progress === 100 && (
-          <section className="completion-banner">
-            <div className="completion-content">
-              <div className="completion-icon">
-                🎉
-              </div>
-
-              <div>
-                <h2 className="completion-title">
-                  Congratulations!
-                </h2>
-
-                <p className="completion-text">
-                  You've completed all 8 lessons
-                  in Python Programming.
-                </p>
-              </div>
-            </div>
-
-            <button
-              className="dashboard-link"
-              onClick={() =>
-                navigate("/dashboard")
-              }
-            >
-              Back to Dashboard
-            </button>
-          </section>
-        )}
-      </main>
-    </div>
+        </div>
+      )}
+    </AppLayout>
   );
 }
-
-export default Learning;

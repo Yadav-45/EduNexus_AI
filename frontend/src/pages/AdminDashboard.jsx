@@ -1,6 +1,23 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import AppLayout from "../components/AppLayout";
+import {
+  Users,
+  GraduationCap,
+  Briefcase,
+  UserCheck,
+  CalendarCheck,
+  CreditCard,
+  MessageSquare,
+  BookOpen,
+  FolderOpen,
+  Bot,
+  ArrowRight,
+  TrendingUp,
+  Activity,
+  ShieldCheck,
+} from "lucide-react";
 
 function AdminDashboard() {
   const navigate = useNavigate();
@@ -14,10 +31,7 @@ function AdminDashboard() {
         const response = await api.get("/users");
         setUsers(response.data);
       } catch (error) {
-        console.error(
-          "Unable to load users:",
-          error
-        );
+        console.error("Unable to load users:", error);
       } finally {
         setLoading(false);
       }
@@ -27,546 +41,396 @@ function AdminDashboard() {
   }, []);
 
   const getCount = (role) => {
-    return users.filter(
-      (user) => user.role === role
-    ).length;
+    return users.filter((user) => user.role === role).length;
   };
 
-  const activeUsers = users.filter(
-    (user) => user.is_active
-  ).length;
+  const activeUsers = users.filter((user) => user.is_active).length;
 
   const modules = [
     {
-      icon: "👨‍🎓",
-      title: "Students",
-      description:
-        "Manage student profiles, academic information, attendance, fees, and documents.",
-      button: "Coming Soon",
+      icon: GraduationCap,
+      title: "Students Management",
+      description: "Manage 360° student records, enrollment, sections, profiles, and attendance records.",
+      path: "/students",
+      color: "#6366f1",
     },
     {
-      icon: "👩‍🏫",
-      title: "Teachers & Staff",
-      description:
-        "View teaching staff, staff accounts, responsibilities, and school assignments.",
-      button: "Coming Soon",
+      icon: Briefcase,
+      title: "Staff & Human Resources",
+      description: "Comprehensive faculty directory, payroll generation, biometric attendance, and performance.",
+      path: "/staff",
+      color: "#3b82f6",
     },
     {
-      icon: "📝",
-      title: "Admissions",
-      description:
-        "Manage applications, admissions, enrollment, and student onboarding.",
-      button: "Coming Soon",
+      icon: UserCheck,
+      title: "Admissions Pipeline",
+      description: "Automated candidate onboarding, application review workflows, and enrollment status.",
+      path: "/admissions",
+      color: "#06b6d4",
     },
     {
-      icon: "📅",
-      title: "Attendance",
-      description:
-        "Monitor student and staff attendance across classes and sections.",
-      button: "Coming Soon",
+      icon: CalendarCheck,
+      title: "Daily Attendance Engine",
+      description: "Real-time presence logging, automated absenteeism notices, and institutional reports.",
+      path: "/attendance",
+      color: "#10b981",
     },
     {
-      icon: "💳",
-      title: "Fees",
-      description:
-        "Manage student fee information, payment status, receipts, and outstanding balances.",
-      button: "Coming Soon",
+      icon: CreditCard,
+      title: "Fee & Billing Control",
+      description: "Student ledgers, outstanding balances, late fine rules, and audited digital fee receipts.",
+      path: "/fees",
+      color: "#f59e0b",
     },
     {
-      icon: "📢",
-      title: "Communication",
-      description:
-        "Manage notices, announcements, parent communication, and school messaging.",
-      button: "Coming Soon",
-    },
-    {
-      icon: "📚",
+      icon: BookOpen,
       title: "Academic Operations",
-      description:
-        "Manage classes, sections, courses, assignments, schedules, and academic activities.",
-      button: "Coming Soon",
+      description: "Curriculum oversight, syllabus distribution, assignment scoring, and semester schedules.",
+      path: "/courses",
+      color: "#a855f7",
     },
     {
-      icon: "🚌",
-      title: "Transport",
-      description:
-        "View routes, vehicles, drivers, and student transport operations.",
-      button: "Coming Soon",
+      icon: MessageSquare,
+      title: "Notice & Messaging Desk",
+      description: "Broadcast emergency announcements, class circulations, and targeted parent notifications.",
+      path: "/communication",
+      color: "#ec4899",
     },
     {
-      icon: "📦",
-      title: "Inventory",
-      description:
-        "Track school assets, supplies, stock, and inventory movement.",
-      button: "Coming Soon",
+      icon: FolderOpen,
+      title: "Document Vault",
+      description: "Encrypted institutional file depository, certificates, verification, and archive storage.",
+      path: "/documents",
+      color: "#8b5cf6",
     },
     {
-      icon: "📄",
-      title: "Documents",
-      description:
-        "Manage student records, school documents, reports, and uploaded files.",
-      button: "Coming Soon",
-    },
-    {
-      icon: "📊",
-      title: "Reports",
-      description:
-        "Generate operational reports for students, attendance, admissions, and school activities.",
-      button: "Coming Soon",
-    },
-    {
-      icon: "✦",
-      title: "AI School Assistant",
-      description:
-        "Use AI to answer operational questions and help staff work with school information.",
-      button: "Coming Soon",
+      icon: Bot,
+      title: "AI Neural Copilot",
+      description: "Conversational machine intelligence querying operational data, metrics, and academic forecasts.",
+      path: "/ai-tutor",
+      color: "#14b8a6",
     },
   ];
 
   return (
-    <div className="admin-dashboard">
+    <AppLayout
+      title="Administrative Command Center"
+      subtitle="Institutional orchestration, identity controls, and operational workflows"
+    >
+      <div className="admin-page-container">
+        {/* KPI Banner Grid */}
+        <section className="kpi-grid">
+          <KpiCard
+            icon={Users}
+            label="Total Accounts"
+            value={loading ? "..." : users.length}
+            note="Registered records"
+            color="#6366f1"
+          />
+          <KpiCard
+            icon={GraduationCap}
+            label="Enrolled Students"
+            value={loading ? "..." : getCount("STUDENT")}
+            note="Active learners"
+            color="#06b6d4"
+          />
+          <KpiCard
+            icon={Briefcase}
+            label="Faculty & Staff"
+            value={loading ? "..." : getCount("TEACHER")}
+            note="Instructional staff"
+            color="#a855f7"
+          />
+          <KpiCard
+            icon={ShieldCheck}
+            label="Parents Connected"
+            value={loading ? "..." : getCount("PARENT")}
+            note="Guardian portals"
+            color="#f59e0b"
+          />
+          <KpiCard
+            icon={Activity}
+            label="Active Sessions"
+            value={loading ? "..." : activeUsers}
+            note="Authenticated"
+            color="#10b981"
+          />
+        </section>
+
+        {/* Core Operations Section */}
+        <section className="operations-section">
+          <div className="section-header">
+            <div>
+              <h2 className="section-title">Institutional Systems</h2>
+              <p className="section-desc">Direct access to core administrative operational modules</p>
+            </div>
+            <div className="live-status-pill">
+              <span className="live-dot" />
+              <span>All Systems Operational</span>
+            </div>
+          </div>
+
+          <div className="modules-grid">
+            {modules.map((m) => {
+              const Icon = m.icon;
+              return (
+                <div
+                  key={m.title}
+                  onClick={() => navigate(m.path)}
+                  className="module-card"
+                >
+                  <div className="module-top">
+                    <div
+                      className="module-icon-box"
+                      style={{
+                        background: `${m.color}1a`,
+                        color: m.color,
+                        borderColor: `${m.color}33`,
+                      }}
+                    >
+                      <Icon size={22} />
+                    </div>
+                    <ArrowRight size={18} className="module-arrow" />
+                  </div>
+
+                  <h3 className="module-name">{m.title}</h3>
+                  <p className="module-desc">{m.description}</p>
+
+                  <div className="module-action-row">
+                    <span className="module-link-text">Launch Module</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+
       <style>{`
-        * {
-          box-sizing: border-box;
+        .admin-page-container {
+          display: flex;
+          flex-direction: column;
+          gap: 32px;
+          max-width: 1400px;
+          margin: 0 auto;
         }
 
-        body {
-          margin: 0;
+        .kpi-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+          gap: 18px;
         }
 
-        .admin-dashboard {
-          min-height: 100vh;
-          background: #f8fafc;
-          color: #101828;
-          font-family:
-            Inter,
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
-            Arial,
-            sans-serif;
+        .kpi-card {
+          background: #111726;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 16px;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .topbar {
-          height: 72px;
-          background: #ffffff;
-          border-bottom: 1px solid #e4e7ec;
-          padding: 0 36px;
+        .kpi-card:hover {
+          border-color: rgba(255, 255, 255, 0.16);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 26px rgba(0, 0, 0, 0.6);
+        }
+
+        .kpi-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
         }
 
-        .brand {
+        .kpi-icon-box {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
           display: flex;
           align-items: center;
+          justify-content: center;
+          border: 1px solid transparent;
+        }
+
+        .kpi-label {
+          font-size: 12px;
+          font-weight: 600;
+          color: #94a3b8;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .kpi-value {
+          font-family: 'Outfit', sans-serif;
+          font-size: 32px;
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          color: #ffffff;
+          margin: 0;
+        }
+
+        .kpi-note {
+          font-size: 12px;
+          color: #64748b;
+        }
+
+        .operations-section {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .section-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
           gap: 12px;
         }
 
-        .brand-mark {
-          width: 40px;
-          height: 40px;
-          border-radius: 10px;
+        .section-title {
+          font-family: 'Outfit', sans-serif;
+          font-size: 20px;
+          font-weight: 700;
+          margin: 0;
+          color: #ffffff;
+        }
+
+        .section-desc {
+          font-size: 13.5px;
+          color: #64748b;
+          margin: 4px 0 0;
+        }
+
+        .live-status-pill {
           display: flex;
           align-items: center;
-          justify-content: center;
-          background:
-            linear-gradient(
-              135deg,
-              #2563eb,
-              #4f46e5
-            );
-          color: #ffffff;
-          font-size: 17px;
-          font-weight: 850;
-        }
-
-        .brand-name {
-          font-size: 17px;
-          font-weight: 850;
-          letter-spacing: -0.4px;
-        }
-
-        .brand-name span {
-          color: #2563eb;
-        }
-
-        .brand-caption {
-          margin-top: 3px;
-          color: #98a2b3;
-          font-size: 8px;
-          font-weight: 750;
-          letter-spacing: 0.8px;
-        }
-
-        .role-badge {
-          padding: 7px 11px;
-          border-radius: 7px;
-          background: #eff6ff;
-          color: #1d4ed8;
-          font-size: 9px;
-          font-weight: 800;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .content {
-          max-width: 1280px;
-          margin: 0 auto;
-          padding: 38px 36px 50px;
-        }
-
-        .welcome {
-          margin-bottom: 28px;
-        }
-
-        .eyebrow {
-          margin-bottom: 7px;
-          color: #2563eb;
-          font-size: 9px;
-          font-weight: 850;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
-
-        .title {
-          margin: 0;
-          font-size: 32px;
-          line-height: 1.15;
-          font-weight: 850;
-          letter-spacing: -0.9px;
-        }
-
-        .subtitle {
-          max-width: 720px;
-          margin: 10px 0 0;
-          color: #667085;
+          gap: 8px;
+          padding: 6px 14px;
+          background: rgba(16, 185, 129, 0.1);
+          border: 1px solid rgba(16, 185, 129, 0.25);
+          border-radius: 9999px;
           font-size: 12px;
-          line-height: 1.7;
+          font-weight: 600;
+          color: #34d399;
         }
 
-        .stats {
+        .live-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #10b981;
+          box-shadow: 0 0 8px #10b981;
+        }
+
+        .modules-grid {
           display: grid;
-          grid-template-columns:
-            repeat(5, minmax(0, 1fr));
-          gap: 14px;
-          margin-bottom: 32px;
+          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+          gap: 20px;
         }
 
-        .stat {
-          background: #ffffff;
-          border: 1px solid #e4e7ec;
-          border-radius: 12px;
-          padding: 18px;
+        .module-card {
+          background: #111726;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 18px;
+          padding: 24px;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .stat-label {
-          color: #667085;
-          font-size: 8px;
-          font-weight: 800;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
+        .module-card:hover {
+          border-color: rgba(99, 102, 241, 0.4);
+          background: #151d30;
+          transform: translateY(-3px);
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 24px rgba(99, 102, 241, 0.15);
         }
 
-        .stat-value {
-          margin-top: 8px;
-          color: #101828;
-          font-size: 24px;
-          font-weight: 850;
-        }
-
-        .stat-note {
-          margin-top: 4px;
-          color: #98a2b3;
-          font-size: 8px;
-        }
-
-        .section-heading {
+        .module-top {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          margin-bottom: 15px;
         }
 
-        .section-title {
-          margin: 0;
-          font-size: 15px;
-          font-weight: 850;
-        }
-
-        .section-caption {
-          color: #98a2b3;
-          font-size: 9px;
-        }
-
-        .modules {
-          display: grid;
-          grid-template-columns:
-            repeat(3, minmax(0, 1fr));
-          gap: 16px;
-        }
-
-        .module {
-          background: #ffffff;
-          border: 1px solid #e4e7ec;
-          border-radius: 13px;
-          padding: 20px;
-          transition:
-            transform 0.16s ease,
-            box-shadow 0.16s ease,
-            border-color 0.16s ease;
-        }
-
-        .module:hover {
-          transform: translateY(-2px);
-          border-color: #d7dce3;
-          box-shadow:
-            0 10px 28px
-            rgba(16, 24, 40, 0.055);
-        }
-
-        .module-icon {
-          width: 40px;
-          height: 40px;
+        .module-icon-box {
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 10px;
-          background: #eff6ff;
-          font-size: 18px;
-          margin-bottom: 13px;
+          border: 1px solid;
         }
 
-        .module-title {
-          margin: 0;
-          font-size: 14px;
-          font-weight: 800;
+        .module-arrow {
+          color: #64748b;
+          transition: all 0.2s;
         }
 
-        .module-description {
-          min-height: 45px;
-          margin: 7px 0 0;
-          color: #667085;
-          font-size: 10px;
-          line-height: 1.6;
+        .module-card:hover .module-arrow {
+          color: #818cf8;
+          transform: translateX(4px);
         }
 
-        .module-button {
-          margin-top: 14px;
-          padding: 8px 11px;
-          border: 1px solid #d0d5dd;
-          border-radius: 7px;
-          background: #ffffff;
-          color: #344054;
-          font-size: 9px;
-          font-weight: 750;
-          cursor: pointer;
-        }
-
-        .module-button:hover {
-          background: #f9fafb;
-        }
-
-        .module-button.primary {
-          border-color: #2563eb;
-          background: #2563eb;
+        .module-name {
+          font-family: 'Outfit', sans-serif;
+          font-size: 17px;
+          font-weight: 700;
           color: #ffffff;
+          margin: 0;
         }
 
-        .module-button.primary:hover {
-          background: #1d4ed8;
+        .module-desc {
+          font-size: 13px;
+          line-height: 1.55;
+          color: #94a3b8;
+          margin: 0;
+          flex: 1;
         }
 
-        @media (max-width: 1050px) {
-          .stats {
-            grid-template-columns:
-              repeat(3, minmax(0, 1fr));
-          }
-
-          .modules {
-            grid-template-columns:
-              repeat(2, minmax(0, 1fr));
-          }
+        .module-action-row {
+          margin-top: 8px;
+          padding-top: 12px;
+          border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        @media (max-width: 650px) {
-          .topbar {
-            padding: 0 18px;
-          }
+        .module-link-text {
+          font-size: 12.5px;
+          font-weight: 600;
+          color: #818cf8;
+        }
 
-          .content {
-            padding: 28px 18px 40px;
-          }
-
-          .stats {
-            grid-template-columns:
-              repeat(2, minmax(0, 1fr));
-          }
-
-          .modules {
-            grid-template-columns: 1fr;
-          }
-
-          .title {
-            font-size: 27px;
-          }
-
-          .role-badge {
-            display: none;
-          }
+        .module-card:hover .module-link-text {
+          color: #a5b4fc;
         }
       `}</style>
-
-      <header className="topbar">
-        <div className="brand">
-          <div className="brand-mark">
-            E
-          </div>
-
-          <div>
-            <div className="brand-name">
-              edu<span>nexus.ai</span>
-            </div>
-
-            <div className="brand-caption">
-              AI SCHOOL OPERATING SYSTEM
-            </div>
-          </div>
-        </div>
-
-        <div className="role-badge">
-          Administrator
-        </div>
-      </header>
-
-      <main className="content">
-        <section className="welcome">
-          <div className="eyebrow">
-            Administrator Portal
-          </div>
-
-          <h1 className="title">
-            School Administration
-          </h1>
-
-          <p className="subtitle">
-            Manage students, staff, admissions,
-            attendance, fees, communication, and
-            day-to-day school operations from one
-            central workspace.
-          </p>
-        </section>
-
-        <section className="stats">
-          <StatCard
-            label="Total Users"
-            value={
-              loading ? "..." : users.length
-            }
-            note="School accounts"
-          />
-
-          <StatCard
-            label="Students"
-            value={
-              loading
-                ? "..."
-                : getCount("STUDENT")
-            }
-            note="Student accounts"
-          />
-
-          <StatCard
-            label="Teachers"
-            value={
-              loading
-                ? "..."
-                : getCount("TEACHER")
-            }
-            note="Teaching staff"
-          />
-
-          <StatCard
-            label="Parents"
-            value={
-              loading
-                ? "..."
-                : getCount("PARENT")
-            }
-            note="Parent accounts"
-          />
-
-          <StatCard
-            label="Active Users"
-            value={
-              loading ? "..." : activeUsers
-            }
-            note="Currently active"
-          />
-        </section>
-
-        <section>
-          <div className="section-heading">
-            <h2 className="section-title">
-              School Operations
-            </h2>
-
-            <span className="section-caption">
-              Administrator workspace
-            </span>
-          </div>
-
-          <div className="modules">
-            {modules.map((module) => (
-              <div
-                className="module"
-                key={module.title}
-              >
-                <div className="module-icon">
-                  {module.icon}
-                </div>
-
-                <h3 className="module-title">
-                  {module.title}
-                </h3>
-
-                <p className="module-description">
-                  {module.description}
-                </p>
-
-                <button
-                  className="module-button"
-                  onClick={module.action}
-                >
-                  {module.button}
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-    </div>
+    </AppLayout>
   );
 }
 
-function StatCard({
-  label,
-  value,
-  note,
-}) {
+function KpiCard({ icon: Icon, label, value, note, color }) {
   return (
-    <div className="stat">
-      <div className="stat-label">
-        {label}
+    <div className="kpi-card">
+      <div className="kpi-header">
+        <span className="kpi-label">{label}</span>
+        <div
+          className="kpi-icon-box"
+          style={{
+            background: `${color}18`,
+            color: color,
+            borderColor: `${color}30`,
+          }}
+        >
+          <Icon size={18} />
+        </div>
       </div>
-
-      <div className="stat-value">
-        {value}
-      </div>
-
-      <div className="stat-note">
-        {note}
-      </div>
+      <div className="kpi-value">{value}</div>
+      <div className="kpi-note">{note}</div>
     </div>
   );
 }

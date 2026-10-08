@@ -1,6 +1,23 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import AppLayout from "../components/AppLayout";
 import api from "../api/axios";
+import {
+  CreditCard,
+  DollarSign,
+  TrendingUp,
+  AlertCircle,
+  RefreshCw,
+  Search,
+  CheckCircle2,
+  Clock,
+  FileText,
+  X,
+  Layers,
+  ChevronLeft,
+  ChevronRight,
+  Plus
+} from "lucide-react";
 
 function formatNPR(value) {
   const number = Number(value || 0);
@@ -10,7 +27,7 @@ function formatNPR(value) {
   })}`;
 }
 
-function Fees() {
+export default function Fees() {
   const navigate = useNavigate();
 
   const [summary, setSummary] = useState({
@@ -64,16 +81,12 @@ function Fees() {
 
   async function loadSummary() {
     setSummaryLoading(true);
-
     try {
       const response = await api.get("/fee-dashboard/summary");
       setSummary(response.data);
     } catch (err) {
       console.error("Fee summary error:", err);
-      setError(
-        err.response?.data?.detail ||
-          "Unable to load fee dashboard summary."
-      );
+      setError(err.response?.data?.detail || "Unable to load fee dashboard summary.");
     } finally {
       setSummaryLoading(false);
     }
@@ -82,7 +95,6 @@ function Fees() {
   async function loadAccounts() {
     setLoading(true);
     setError("");
-
     try {
       const params = {
         page,
@@ -90,17 +102,10 @@ function Fees() {
         sort_by: "id",
         sort_order: "desc",
       };
-
-      if (search.trim()) {
-        params.search = search.trim();
-      }
-
-      if (status) {
-        params.status = status;
-      }
+      if (search.trim()) params.search = search.trim();
+      if (status) params.status = status;
 
       const response = await api.get("/fee-accounts", { params });
-
       setAccounts(response.data.data || []);
       setPagination(
         response.data.pagination || {
@@ -113,17 +118,14 @@ function Fees() {
     } catch (err) {
       console.error("Fee accounts error:", err);
       setAccounts([]);
-      setError(
-        err.response?.data?.detail ||
-          "Unable to load fee accounts."
-      );
+      setError(err.response?.data?.detail || "Unable to load fee accounts.");
     } finally {
       setLoading(false);
     }
   }
 
-  function handleSearchSubmit(event) {
-    event.preventDefault();
+  function handleSearchSubmit(e) {
+    e.preventDefault();
     setPage(1);
     loadAccounts();
   }
@@ -145,10 +147,7 @@ function Fees() {
       setPayments(paymentsResponse.data || []);
     } catch (err) {
       console.error("Fee details error:", err);
-      setError(
-        err.response?.data?.detail ||
-          "Unable to load fee account details."
-      );
+      setError(err.response?.data?.detail || "Unable to load fee account details.");
     } finally {
       setPaymentsLoading(false);
     }
@@ -165,20 +164,15 @@ function Fees() {
     setPaymentOpen(true);
   }
 
-  async function submitPayment(event) {
-    event.preventDefault();
-
-    if (!selectedAccount) {
-      return;
-    }
+  async function submitPayment(e) {
+    e.preventDefault();
+    if (!selectedAccount) return;
 
     const amount = Number(paymentForm.amount);
-
     if (!amount || amount <= 0) {
       setError("Enter a valid payment amount.");
       return;
     }
-
     if (amount > Number(selectedAccount.balance)) {
       setError("Payment cannot be greater than the outstanding balance.");
       return;
@@ -188,16 +182,12 @@ function Fees() {
     setError("");
 
     try {
-      await api.post(
-        `/fee-accounts/${selectedAccount.id}/payments`,
-        {
-          amount: paymentForm.amount,
-          payment_method: paymentForm.payment_method,
-          transaction_reference:
-            paymentForm.transaction_reference.trim() || null,
-          remarks: paymentForm.remarks.trim() || null,
-        }
-      );
+      await api.post(`/fee-accounts/${selectedAccount.id}/payments`, {
+        amount: paymentForm.amount,
+        payment_method: paymentForm.payment_method,
+        transaction_reference: paymentForm.transaction_reference.trim() || null,
+        remarks: paymentForm.remarks.trim() || null,
+      });
 
       setPaymentOpen(false);
       setPaymentForm({
@@ -208,16 +198,12 @@ function Fees() {
       });
 
       await Promise.all([loadAccounts(), loadSummary()]);
-
       if (detailsOpen) {
         await openDetails(selectedAccount);
       }
     } catch (err) {
       console.error("Payment error:", err);
-      setError(
-        err.response?.data?.detail ||
-          "Unable to record payment."
-      );
+      setError(err.response?.data?.detail || "Unable to record payment.");
     } finally {
       setSavingPayment(false);
     }
@@ -229,848 +215,636 @@ function Fees() {
     setPayments([]);
   }
 
-  const currentBalance = Number(selectedAccount?.balance || 0);
+  function renderStatusBadge(st) {
+    const s = String(st || "").toUpperCase();
+    if (s === "PAID" || s === "SUCCESS" || s === "COMPLETED") {
+      return <span className="badge badge-success">{s}</span>;
+    }
+    if (s === "OVERDUE" || s === "FAILED") {
+      return <span className="badge badge-danger">{s}</span>;
+    }
+    if (s === "PARTIAL" || s === "PENDING") {
+      return <span className="badge badge-warning">{s}</span>;
+    }
+    return <span className="badge badge-info">{s || "ACTIVE"}</span>;
+  }
 
   return (
-    <div style={styles.page}>
-      <div style={styles.header}>
-        <div>
-          <button
-            style={styles.backButton}
-            onClick={() => navigate(-1)}
-          >
-            ← Back
-          </button>
-
-          <h1 style={styles.title}>Fee Management</h1>
-          <p style={styles.subtitle}>
-            Manage student fee accounts, collections and outstanding balances.
-          </p>
-        </div>
-
+    <AppLayout
+      title="Tuition & Financial Operations"
+      subtitle="Student ledger balances, collection channels, and payment verification."
+      actions={
         <button
-          style={styles.refreshButton}
           onClick={() => {
             loadSummary();
             loadAccounts();
           }}
+          disabled={loading || summaryLoading}
+          className="btn btn-secondary"
+          style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
         >
-          ↻ Refresh
+          <RefreshCw size={15} className={loading || summaryLoading ? "animate-spin" : ""} />
+          Sync Ledgers
         </button>
+      }
+    >
+      {/* SUMMARY KPI CARDS */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: "16px",
+          marginBottom: "24px",
+        }}
+      >
+        <div className="card" style={{ padding: "18px 20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+            <span style={{ fontSize: "11.5px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>
+              Total Assessed Due
+            </span>
+            <DollarSign size={18} style={{ color: "var(--accent-indigo)" }} />
+          </div>
+          <div style={{ fontSize: "22px", fontWeight: 800, color: "var(--text-bright)", fontFamily: "var(--font-mono)" }}>
+            {summaryLoading ? "..." : formatNPR(summary.total_due)}
+          </div>
+          <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px" }}>
+            All academic terms
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: "18px 20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+            <span style={{ fontSize: "11.5px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>
+              Collected Funds
+            </span>
+            <CheckCircle2 size={18} style={{ color: "var(--accent-emerald)" }} />
+          </div>
+          <div style={{ fontSize: "22px", fontWeight: 800, color: "var(--accent-emerald)", fontFamily: "var(--font-mono)" }}>
+            {summaryLoading ? "..." : formatNPR(summary.total_paid)}
+          </div>
+          <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px" }}>
+            {summary.total_successful_payments} cleared transactions
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: "18px 20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+            <span style={{ fontSize: "11.5px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>
+              Outstanding Balance
+            </span>
+            <AlertCircle size={18} style={{ color: "var(--accent-amber)" }} />
+          </div>
+          <div style={{ fontSize: "22px", fontWeight: 800, color: "var(--accent-amber)", fontFamily: "var(--font-mono)" }}>
+            {summaryLoading ? "..." : formatNPR(summary.total_balance)}
+          </div>
+          <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px" }}>
+            Pending collections
+          </div>
+        </div>
+
+        <div className="card" style={{ padding: "18px 20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+            <span style={{ fontSize: "11.5px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>
+              Fee Accounts
+            </span>
+            <Layers size={18} style={{ color: "var(--accent-cyan)" }} />
+          </div>
+          <div style={{ fontSize: "24px", fontWeight: 800, color: "var(--accent-cyan)" }}>
+            {summaryLoading ? "..." : summary.total_accounts}
+          </div>
+          <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px" }}>
+            {summary.active_accounts} active accounts
+          </div>
+        </div>
       </div>
 
+      {/* ERROR ALERT */}
       {error && (
-        <div style={styles.error}>
-          <strong>Error:</strong> {error}
+        <div
+          style={{
+            background: "rgba(239, 68, 68, 0.12)",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+            borderRadius: "12px",
+            padding: "16px 20px",
+            marginBottom: "20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            color: "#f87171",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <AlertCircle size={18} />
+            <span style={{ fontSize: "13.5px" }}>{error}</span>
+          </div>
           <button
-            style={styles.errorClose}
             onClick={() => setError("")}
+            style={{ background: "transparent", border: "none", color: "#f87171", cursor: "pointer" }}
           >
-            ×
+            <X size={16} />
           </button>
         </div>
       )}
 
-      <div style={styles.summaryGrid}>
-        <SummaryCard
-          title="Total Due"
-          value={formatNPR(summary.total_due)}
-          loading={summaryLoading}
-        />
-        <SummaryCard
-          title="Total Collected"
-          value={formatNPR(summary.total_paid)}
-          loading={summaryLoading}
-        />
-        <SummaryCard
-          title="Outstanding"
-          value={formatNPR(summary.total_balance)}
-          loading={summaryLoading}
-        />
-        <SummaryCard
-          title="Fee Accounts"
-          value={summary.total_accounts}
-          loading={summaryLoading}
-        />
-        <SummaryCard
-          title="Active Accounts"
-          value={summary.active_accounts}
-          loading={summaryLoading}
-        />
-        <SummaryCard
-          title="Successful Payments"
-          value={summary.total_successful_payments}
-          loading={summaryLoading}
-        />
-      </div>
-
-      <div style={styles.card}>
-        <div style={styles.toolbar}>
-          <form onSubmit={handleSearchSubmit} style={styles.searchForm}>
+      {/* SEARCH & FILTERS BAR */}
+      <div
+        className="card"
+        style={{
+          padding: "16px 20px",
+          marginBottom: "20px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "14px",
+        }}
+      >
+        <form onSubmit={handleSearchSubmit} style={{ display: "flex", gap: "10px", flex: "1 1 320px", maxWidth: "460px" }}>
+          <div style={{ position: "relative", width: "100%" }}>
+            <Search
+              size={16}
+              style={{
+                position: "absolute",
+                left: "14px",
+                top: "50%",
+                transform: "translateY(-50)",
+                color: "var(--text-muted)",
+              }}
+            />
             <input
               type="text"
-              placeholder="Search student name or admission number..."
+              placeholder="Search by student ID or admission..."
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              style={styles.searchInput}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input-field"
+              style={{ paddingLeft: "40px", height: "40px", fontSize: "13.5px" }}
             />
-
-            <button type="submit" style={styles.primaryButton}>
-              Search
-            </button>
-          </form>
-
-          <div style={styles.filters}>
-            <select
-              value={status}
-              onChange={(event) => {
-                setStatus(event.target.value);
-                setPage(1);
-              }}
-              style={styles.select}
-            >
-              <option value="">All Statuses</option>
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="PAID">PAID</option>
-              <option value="PARTIAL">PARTIAL</option>
-              <option value="OVERDUE">OVERDUE</option>
-              <option value="CLOSED">CLOSED</option>
-            </select>
-
-            <select
-              value={pageSize}
-              onChange={(event) => {
-                setPageSize(Number(event.target.value));
-                setPage(1);
-              }}
-              style={styles.select}
-            >
-              <option value={10}>10 / page</option>
-              <option value={25}>25 / page</option>
-              <option value={50}>50 / page</option>
-              <option value={100}>100 / page</option>
-            </select>
           </div>
+          <button type="submit" className="btn btn-primary" style={{ padding: "0 18px", height: "40px" }}>
+            Search
+          </button>
+        </form>
+
+        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
+            className="input-field"
+            style={{ width: "auto", minWidth: "140px", height: "40px", fontSize: "13px" }}
+          >
+            <option value="">All Statuses</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="PAID">PAID</option>
+            <option value="PARTIAL">PARTIAL</option>
+            <option value="OVERDUE">OVERDUE</option>
+            <option value="CLOSED">CLOSED</option>
+          </select>
+
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setPage(1);
+            }}
+            className="input-field"
+            style={{ width: "auto", minWidth: "110px", height: "40px", fontSize: "13px" }}
+          >
+            <option value={10}>10 / page</option>
+            <option value={25}>25 / page</option>
+            <option value={50}>50 / page</option>
+            <option value={100}>100 / page</option>
+          </select>
         </div>
+      </div>
 
-        <div style={styles.tableHeader}>
-          <div>
-            <strong>Student Fee Accounts</strong>
-            <span style={styles.resultCount}>
-              {pagination.total || 0} account(s)
-            </span>
-          </div>
+      {/* TABLE */}
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div
+          style={{
+            padding: "16px 20px",
+            borderBottom: "1px solid var(--border-default)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <span style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--text-secondary)" }}>
+            Student Fee Accounts ({pagination.total || 0} registered)
+          </span>
         </div>
 
         {loading ? (
-          <div style={styles.empty}>Loading fee accounts...</div>
+          <div style={{ padding: "60px 20px", textAlign: "center" }}>
+            <div
+              style={{
+                width: "36px",
+                height: "36px",
+                border: "3px solid rgba(255, 255, 255, 0.1)",
+                borderTopColor: "var(--accent-indigo)",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+                margin: "0 auto 16px",
+              }}
+            />
+            <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>Retrieving ledger balances...</p>
+          </div>
         ) : accounts.length === 0 ? (
-          <div style={styles.empty}>
-            No fee accounts found.
+          <div style={{ padding: "60px 20px", textAlign: "center" }}>
+            <CreditCard size={44} style={{ color: "var(--text-muted)", opacity: 0.6, margin: "0 auto 14px" }} />
+            <h3 style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-bright)", margin: "0 0 6px" }}>
+              No fee accounts found
+            </h3>
+            <p style={{ color: "var(--text-secondary)", fontSize: "13px" }}>
+              Try adjusting your search criteria or filter status.
+            </p>
           </div>
         ) : (
-          <div style={styles.tableWrapper}>
-            <table style={styles.table}>
+          <div style={{ width: "100%", overflowX: "auto" }}>
+            <table className="dark-table">
               <thead>
                 <tr>
-                  <th style={styles.th}>Student ID</th>
-                  <th style={styles.th}>Academic Year</th>
-                  <th style={styles.th}>Total Due</th>
-                  <th style={styles.th}>Paid</th>
-                  <th style={styles.th}>Balance</th>
-                  <th style={styles.th}>Status</th>
-                  <th style={styles.th}>Actions</th>
+                  <th>Student ID</th>
+                  <th>Academic Session</th>
+                  <th>Total Due</th>
+                  <th>Amount Paid</th>
+                  <th>Remaining Balance</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: "right" }}>Actions</th>
                 </tr>
               </thead>
-
               <tbody>
-                {accounts.map((account) => (
-                  <tr key={account.id}>
-                    <td style={styles.td}>
-                      #{account.student_id}
-                    </td>
-                    <td style={styles.td}>
-                      {account.academic_year}
-                    </td>
-                    <td style={styles.td}>
-                      {formatNPR(account.total_due)}
-                    </td>
-                    <td style={styles.td}>
-                      {formatNPR(account.total_paid)}
-                    </td>
-                    <td style={styles.td}>
-                      <strong>
-                        {formatNPR(account.balance)}
-                      </strong>
-                    </td>
-                    <td style={styles.td}>
-                      <StatusBadge status={account.status} />
-                    </td>
-                    <td style={styles.td}>
-                      <div style={styles.actions}>
-                        <button
-                          style={styles.secondaryButton}
-                          onClick={() => openDetails(account)}
-                        >
-                          View
-                        </button>
+                {accounts.map((acc) => {
+                  const hasBalance = Number(acc.balance) > 0 && acc.status !== "CLOSED";
 
-                        {Number(account.balance) > 0 &&
-                          account.status !== "CLOSED" && (
+                  return (
+                    <tr key={acc.id}>
+                      <td style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "var(--accent-cyan)" }}>
+                        #{acc.student_id}
+                      </td>
+                      <td style={{ color: "var(--text-secondary)", fontSize: "13px" }}>
+                        {acc.academic_year}
+                      </td>
+                      <td style={{ fontFamily: "var(--font-mono)", fontSize: "13px", color: "var(--text-bright)" }}>
+                        {formatNPR(acc.total_due)}
+                      </td>
+                      <td style={{ fontFamily: "var(--font-mono)", fontSize: "13px", color: "var(--accent-emerald)" }}>
+                        {formatNPR(acc.total_paid)}
+                      </td>
+                      <td style={{ fontFamily: "var(--font-mono)", fontSize: "13.5px", fontWeight: 700, color: Number(acc.balance) > 0 ? "var(--accent-amber)" : "var(--accent-emerald)" }}>
+                        {formatNPR(acc.balance)}
+                      </td>
+                      <td>
+                        {renderStatusBadge(acc.status)}
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        <div style={{ display: "inline-flex", gap: "8px" }}>
+                          <button
+                            onClick={() => openDetails(acc)}
+                            className="btn btn-secondary"
+                            style={{ padding: "6px 12px", fontSize: "12px" }}
+                          >
+                            Details
+                          </button>
+                          {hasBalance && (
                             <button
-                              style={styles.primarySmallButton}
-                              onClick={() => openPayment(account)}
+                              onClick={() => openPayment(acc)}
+                              className="btn btn-primary"
+                              style={{ padding: "6px 12px", fontSize: "12px" }}
                             >
-                              Payment
+                              + Pay
                             </button>
                           )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
 
-        <div style={styles.pagination}>
+        {/* PAGINATION */}
+        <div
+          style={{
+            padding: "14px 20px",
+            borderTop: "1px solid var(--border-default)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <button
-            style={styles.secondaryButton}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
-            onClick={() => setPage((value) => value - 1)}
+            className="btn btn-secondary"
+            style={{ padding: "7px 14px", fontSize: "12.5px" }}
           >
-            ← Previous
+            <ChevronLeft size={14} /> Previous
           </button>
 
-          <span>
-            Page <strong>{pagination.page || page}</strong> of{" "}
-            <strong>{pagination.total_pages || 1}</strong>
+          <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+            Page <strong style={{ color: "var(--text-bright)" }}>{pagination.page || page}</strong> of{" "}
+            <strong style={{ color: "var(--text-bright)" }}>{pagination.total_pages || 1}</strong>
           </span>
 
           <button
-            style={styles.secondaryButton}
+            onClick={() => setPage((p) => p + 1)}
             disabled={page >= (pagination.total_pages || 1)}
-            onClick={() => setPage((value) => value + 1)}
+            className="btn btn-secondary"
+            style={{ padding: "7px 14px", fontSize: "12.5px" }}
           >
-            Next →
+            Next <ChevronRight size={14} />
           </button>
         </div>
       </div>
 
+      {/* ACCOUNT DETAILS MODAL */}
       {detailsOpen && selectedAccount && (
-        <div style={styles.overlay}>
-          <div style={styles.modal}>
-            <div style={styles.modalHeader}>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              width: "100%",
+              maxWidth: "760px",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              padding: 0,
+              boxShadow: "0 25px 60px rgba(0, 0, 0, 0.7)",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
+            }}
+          >
+            <div
+              style={{
+                padding: "20px 24px",
+                borderBottom: "1px solid var(--border-default)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                position: "sticky",
+                top: 0,
+                background: "var(--bg-surface)",
+                zIndex: 2,
+              }}
+            >
               <div>
-                <h2 style={styles.modalTitle}>Fee Account Details</h2>
-                <p style={styles.modalSubtitle}>
-                  Account #{selectedAccount.id}
+                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "var(--text-bright)" }}>
+                  Fee Ledger Profile
+                </h3>
+                <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "var(--text-secondary)" }}>
+                  Account #{selectedAccount.id} · Student #{selectedAccount.student_id}
                 </p>
               </div>
-
               <button
-                style={styles.closeButton}
                 onClick={closeDetails}
+                style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
               >
-                ×
+                <X size={20} />
               </button>
             </div>
 
-            <div style={styles.detailGrid}>
-              <Detail label="Student ID" value={selectedAccount.student_id} />
-              <Detail
-                label="Academic Year"
-                value={selectedAccount.academic_year}
-              />
-              <Detail
-                label="Total Due"
-                value={formatNPR(selectedAccount.total_due)}
-              />
-              <Detail
-                label="Total Paid"
-                value={formatNPR(selectedAccount.total_paid)}
-              />
-              <Detail
-                label="Balance"
-                value={formatNPR(selectedAccount.balance)}
-              />
-              <Detail
-                label="Status"
-                value={<StatusBadge status={selectedAccount.status} />}
-              />
-            </div>
+            <div style={{ padding: "24px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                  gap: "14px",
+                  marginBottom: "24px",
+                  background: "rgba(255, 255, 255, 0.02)",
+                  padding: "16px",
+                  borderRadius: "12px",
+                  border: "1px solid var(--border-default)",
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: "11.5px", color: "var(--text-muted)", textTransform: "uppercase" }}>Total Due</div>
+                  <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--text-bright)", marginTop: "4px" }}>
+                    {formatNPR(selectedAccount.total_due)}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: "11.5px", color: "var(--text-muted)", textTransform: "uppercase" }}>Paid to Date</div>
+                  <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--accent-emerald)", marginTop: "4px" }}>
+                    {formatNPR(selectedAccount.total_paid)}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: "11.5px", color: "var(--text-muted)", textTransform: "uppercase" }}>Balance Outstanding</div>
+                  <div style={{ fontSize: "16px", fontWeight: 700, color: "var(--accent-amber)", marginTop: "4px" }}>
+                    {formatNPR(selectedAccount.balance)}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: "11.5px", color: "var(--text-muted)", textTransform: "uppercase" }}>Account Status</div>
+                  <div style={{ marginTop: "4px" }}>{renderStatusBadge(selectedAccount.status)}</div>
+                </div>
+              </div>
 
-            <div style={styles.paymentHistoryHeader}>
-              <h3>Payment History</h3>
-
-              {currentBalance > 0 &&
-                selectedAccount.status !== "CLOSED" && (
+              {/* PAYMENT HISTORY */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+                <h4 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: "var(--text-bright)" }}>
+                  Verified Payment Receipts
+                </h4>
+                {Number(selectedAccount.balance) > 0 && selectedAccount.status !== "CLOSED" && (
                   <button
-                    style={styles.primaryButton}
                     onClick={() => {
                       setDetailsOpen(false);
                       openPayment(selectedAccount);
                     }}
+                    className="btn btn-primary"
+                    style={{ fontSize: "12px", padding: "6px 12px" }}
                   >
                     + Record Payment
                   </button>
                 )}
-            </div>
+              </div>
 
-            {paymentsLoading ? (
-              <div style={styles.empty}>Loading payments...</div>
-            ) : payments.length === 0 ? (
-              <div style={styles.empty}>
-                No payments recorded yet.
-              </div>
-            ) : (
-              <div style={styles.tableWrapper}>
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>Date</th>
-                      <th style={styles.th}>Amount</th>
-                      <th style={styles.th}>Method</th>
-                      <th style={styles.th}>Reference</th>
-                      <th style={styles.th}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {payments.map((payment) => (
-                      <tr key={payment.id}>
-                        <td style={styles.td}>
-                          {payment.payment_date
-                            ? new Date(
-                                payment.payment_date
-                              ).toLocaleString()
-                            : "-"}
-                        </td>
-                        <td style={styles.td}>
-                          {formatNPR(payment.amount)}
-                        </td>
-                        <td style={styles.td}>
-                          {payment.payment_method}
-                        </td>
-                        <td style={styles.td}>
-                          {payment.transaction_reference || "-"}
-                        </td>
-                        <td style={styles.td}>
-                          <StatusBadge status={payment.status} />
-                        </td>
+              {paymentsLoading ? (
+                <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>
+                  Loading payment history...
+                </div>
+              ) : payments.length === 0 ? (
+                <div style={{ padding: "30px 20px", textAlign: "center", color: "var(--text-muted)", fontSize: "13px" }}>
+                  No historical receipts recorded.
+                </div>
+              ) : (
+                <div style={{ overflowX: "auto" }}>
+                  <table className="dark-table">
+                    <thead>
+                      <tr>
+                        <th>Date & Time</th>
+                        <th>Amount</th>
+                        <th>Channel</th>
+                        <th>Transaction Ref</th>
+                        <th>Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </thead>
+                    <tbody>
+                      {payments.map((p) => (
+                        <tr key={p.id}>
+                          <td style={{ fontSize: "12.5px", color: "var(--text-secondary)" }}>
+                            {p.payment_date ? new Date(p.payment_date).toLocaleString() : "—"}
+                          </td>
+                          <td style={{ fontFamily: "var(--font-mono)", fontWeight: 700, color: "var(--accent-emerald)" }}>
+                            {formatNPR(p.amount)}
+                          </td>
+                          <td style={{ fontSize: "12.5px" }}>{p.payment_method}</td>
+                          <td style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "var(--accent-cyan)" }}>
+                            {p.transaction_reference || "—"}
+                          </td>
+                          <td>{renderStatusBadge(p.status)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
 
+      {/* RECORD PAYMENT MODAL */}
       {paymentOpen && selectedAccount && (
-        <div style={styles.overlay}>
-          <div style={styles.paymentModal}>
-            <div style={styles.modalHeader}>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              width: "100%",
+              maxWidth: "520px",
+              padding: 0,
+              boxShadow: "0 25px 60px rgba(0, 0, 0, 0.7)",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
+            }}
+          >
+            <div
+              style={{
+                padding: "20px 24px",
+                borderBottom: "1px solid var(--border-default)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <div>
-                <h2 style={styles.modalTitle}>Record Fee Payment</h2>
-                <p style={styles.modalSubtitle}>
-                  Student #{selectedAccount.student_id} ·{" "}
-                  {selectedAccount.academic_year}
+                <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 700, color: "var(--text-bright)" }}>
+                  Record Payment
+                </h3>
+                <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "var(--text-secondary)" }}>
+                  Student #{selectedAccount.student_id} · Remaining: {formatNPR(selectedAccount.balance)}
                 </p>
               </div>
-
-             <button
-  style={styles.secondaryButton}
-  onClick={() => navigate(`/fees/${selectedAccount.id}`)}
->
-  View
-</button>
+              <button
+                onClick={() => setPaymentOpen(false)}
+                style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <div style={styles.paymentBalance}>
-              Outstanding Balance:
-              <strong>{formatNPR(selectedAccount.balance)}</strong>
-            </div>
-
-            <form onSubmit={submitPayment}>
-              <label style={styles.label}>
-                Amount *
+            <form onSubmit={submitPayment} style={{ padding: "24px" }}>
+              <div style={{ marginBottom: "16px" }}>
+                <label className="form-label">
+                  Payment Amount (NPR) <span style={{ color: "var(--accent-cyan)" }}>*</span>
+                </label>
                 <input
                   type="number"
                   min="0.01"
-                  max={Number(selectedAccount.balance)}
                   step="0.01"
+                  max={selectedAccount.balance}
                   value={paymentForm.amount}
-                  onChange={(event) =>
-                    setPaymentForm({
-                      ...paymentForm,
-                      amount: event.target.value,
-                    })
-                  }
-                  style={styles.input}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                  placeholder={`Max: ${selectedAccount.balance}`}
                   required
+                  className="input-field"
                 />
-              </label>
+              </div>
 
-              <label style={styles.label}>
-                Payment Method *
-                <input
-                  type="text"
+              <div style={{ marginBottom: "16px" }}>
+                <label className="form-label">Payment Method</label>
+                <select
                   value={paymentForm.payment_method}
-                  onChange={(event) =>
-                    setPaymentForm({
-                      ...paymentForm,
-                      payment_method: event.target.value,
-                    })
-                  }
-                  style={styles.input}
-                  maxLength={30}
-                  required
-                />
-              </label>
+                  onChange={(e) => setPaymentForm({ ...paymentForm, payment_method: e.target.value })}
+                  className="input-field"
+                >
+                  <option value="CASH">Cash</option>
+                  <option value="BANK_TRANSFER">Bank Transfer / NEFT</option>
+                  <option value="ESEWA">eSewa</option>
+                  <option value="KHALTI">Khalti</option>
+                  <option value="CHEQUE">Cheque</option>
+                </select>
+              </div>
 
-              <label style={styles.label}>
-                Transaction Reference
+              <div style={{ marginBottom: "16px" }}>
+                <label className="form-label">Transaction Reference #</label>
                 <input
                   type="text"
                   value={paymentForm.transaction_reference}
-                  onChange={(event) =>
-                    setPaymentForm({
-                      ...paymentForm,
-                      transaction_reference:
-                        event.target.value,
-                    })
-                  }
-                  style={styles.input}
-                  maxLength={100}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, transaction_reference: e.target.value })}
+                  placeholder="e.g. TXN-940283"
+                  className="input-field"
                 />
-              </label>
+              </div>
 
-              <label style={styles.label}>
-                Remarks
-                <textarea
+              <div style={{ marginBottom: "22px" }}>
+                <label className="form-label">Remarks / Description</label>
+                <input
+                  type="text"
                   value={paymentForm.remarks}
-                  onChange={(event) =>
-                    setPaymentForm({
-                      ...paymentForm,
-                      remarks: event.target.value,
-                    })
-                  }
-                  style={styles.textarea}
-                  rows={4}
+                  onChange={(e) => setPaymentForm({ ...paymentForm, remarks: e.target.value })}
+                  placeholder="e.g. Term 1 partial settlement"
+                  className="input-field"
                 />
-              </label>
+              </div>
 
-              <div style={styles.formActions}>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
                 <button
                   type="button"
-                  style={styles.secondaryButton}
                   onClick={() => setPaymentOpen(false)}
+                  disabled={savingPayment}
+                  className="btn btn-secondary"
                 >
                   Cancel
                 </button>
-
                 <button
                   type="submit"
-                  style={styles.primaryButton}
                   disabled={savingPayment}
+                  className="btn btn-primary"
                 >
-                  {savingPayment
-                    ? "Saving..."
-                    : "Save Payment"}
+                  {savingPayment ? "Processing Payment..." : "Confirm Payment"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-    </div>
+    </AppLayout>
   );
 }
-
-function SummaryCard({ title, value, loading }) {
-  return (
-    <div style={styles.summaryCard}>
-      <span style={styles.summaryTitle}>{title}</span>
-      <strong style={styles.summaryValue}>
-        {loading ? "..." : value}
-      </strong>
-    </div>
-  );
-}
-
-function StatusBadge({ status }) {
-  const normalized = String(status || "").toUpperCase();
-
-  return (
-    <span
-      style={{
-        ...styles.badge,
-        ...(normalized === "PAID"
-          ? styles.badgePaid
-          : normalized === "PARTIAL"
-          ? styles.badgePartial
-          : normalized === "OVERDUE"
-          ? styles.badgeOverdue
-          : normalized === "CLOSED"
-          ? styles.badgeClosed
-          : styles.badgeActive),
-      }}
-    >
-      {normalized || "-"}
-    </span>
-  );
-}
-
-function Detail({ label, value }) {
-  return (
-    <div style={styles.detail}>
-      <span style={styles.detailLabel}>{label}</span>
-      <strong style={styles.detailValue}>{value ?? "-"}</strong>
-    </div>
-  );
-}
-
-const styles = {
-  page: {
-    minHeight: "100vh",
-    padding: "32px",
-    background: "#f5f7fb",
-    color: "#172033",
-    fontFamily:
-      "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: "20px",
-    marginBottom: "24px",
-  },
-  backButton: {
-    border: "none",
-    background: "transparent",
-    padding: 0,
-    marginBottom: "10px",
-    cursor: "pointer",
-    color: "#475569",
-    fontSize: "14px",
-  },
-  title: {
-    margin: 0,
-    fontSize: "30px",
-  },
-  subtitle: {
-    margin: "8px 0 0",
-    color: "#64748b",
-  },
-  refreshButton: {
-    border: "1px solid #d7deea",
-    background: "#fff",
-    borderRadius: "10px",
-    padding: "10px 16px",
-    cursor: "pointer",
-    fontWeight: 600,
-  },
-  error: {
-    background: "#fff1f2",
-    border: "1px solid #fecdd3",
-    color: "#9f1239",
-    padding: "12px 14px",
-    borderRadius: "10px",
-    marginBottom: "20px",
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "10px",
-  },
-  errorClose: {
-    border: "none",
-    background: "transparent",
-    cursor: "pointer",
-    fontSize: "20px",
-  },
-  summaryGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(180px, 1fr))",
-    gap: "16px",
-    marginBottom: "24px",
-  },
-  summaryCard: {
-    background: "#fff",
-    border: "1px solid #e5eaf2",
-    borderRadius: "14px",
-    padding: "20px",
-    boxShadow: "0 4px 18px rgba(15, 23, 42, 0.04)",
-  },
-  summaryTitle: {
-    display: "block",
-    color: "#64748b",
-    fontSize: "13px",
-    marginBottom: "10px",
-  },
-  summaryValue: {
-    fontSize: "22px",
-  },
-  card: {
-    background: "#fff",
-    border: "1px solid #e5eaf2",
-    borderRadius: "14px",
-    overflow: "hidden",
-  },
-  toolbar: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "16px",
-    padding: "18px",
-    borderBottom: "1px solid #edf0f5",
-    flexWrap: "wrap",
-  },
-  searchForm: {
-    display: "flex",
-    gap: "8px",
-    flex: 1,
-    minWidth: "280px",
-  },
-  searchInput: {
-    flex: 1,
-    border: "1px solid #d7deea",
-    borderRadius: "9px",
-    padding: "11px 13px",
-    fontSize: "14px",
-  },
-  filters: {
-    display: "flex",
-    gap: "8px",
-  },
-  select: {
-    border: "1px solid #d7deea",
-    borderRadius: "9px",
-    padding: "10px 12px",
-    background: "#fff",
-  },
-  primaryButton: {
-    border: "none",
-    background: "#2563eb",
-    color: "#fff",
-    borderRadius: "9px",
-    padding: "10px 15px",
-    cursor: "pointer",
-    fontWeight: 600,
-  },
-  primarySmallButton: {
-    border: "none",
-    background: "#2563eb",
-    color: "#fff",
-    borderRadius: "7px",
-    padding: "7px 10px",
-    cursor: "pointer",
-    fontWeight: 600,
-    fontSize: "12px",
-  },
-  secondaryButton: {
-    border: "1px solid #d7deea",
-    background: "#fff",
-    color: "#334155",
-    borderRadius: "8px",
-    padding: "8px 12px",
-    cursor: "pointer",
-    fontWeight: 600,
-  },
-  tableHeader: {
-    padding: "16px 18px",
-    borderBottom: "1px solid #edf0f5",
-  },
-  resultCount: {
-    marginLeft: "10px",
-    color: "#64748b",
-    fontSize: "13px",
-  },
-  tableWrapper: {
-    overflowX: "auto",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    minWidth: "850px",
-  },
-  th: {
-    textAlign: "left",
-    padding: "13px 16px",
-    background: "#f8fafc",
-    color: "#64748b",
-    fontSize: "12px",
-    textTransform: "uppercase",
-    letterSpacing: "0.04em",
-  },
-  td: {
-    padding: "14px 16px",
-    borderTop: "1px solid #edf0f5",
-    fontSize: "14px",
-  },
-  actions: {
-    display: "flex",
-    gap: "7px",
-  },
-  badge: {
-    display: "inline-block",
-    borderRadius: "999px",
-    padding: "5px 9px",
-    fontSize: "11px",
-    fontWeight: 700,
-  },
-  badgeActive: {
-    background: "#dbeafe",
-    color: "#1d4ed8",
-  },
-  badgePaid: {
-    background: "#dcfce7",
-    color: "#166534",
-  },
-  badgePartial: {
-    background: "#fef3c7",
-    color: "#92400e",
-  },
-  badgeOverdue: {
-    background: "#fee2e2",
-    color: "#991b1b",
-  },
-  badgeClosed: {
-    background: "#e2e8f0",
-    color: "#475569",
-  },
-  empty: {
-    padding: "50px 20px",
-    textAlign: "center",
-    color: "#64748b",
-  },
-  pagination: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: "18px",
-    padding: "18px",
-    borderTop: "1px solid #edf0f5",
-  },
-  overlay: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(15, 23, 42, 0.55)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: "20px",
-    zIndex: 1000,
-  },
-  modal: {
-    width: "min(1000px, 100%)",
-    maxHeight: "90vh",
-    overflowY: "auto",
-    background: "#fff",
-    borderRadius: "16px",
-    padding: "24px",
-  },
-  paymentModal: {
-    width: "min(560px, 100%)",
-    maxHeight: "90vh",
-    overflowY: "auto",
-    background: "#fff",
-    borderRadius: "16px",
-    padding: "24px",
-  },
-  modalHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    gap: "20px",
-    marginBottom: "20px",
-  },
-  modalTitle: {
-    margin: 0,
-    fontSize: "22px",
-  },
-  modalSubtitle: {
-    margin: "5px 0 0",
-    color: "#64748b",
-  },
-  closeButton: {
-    width: "36px",
-    height: "36px",
-    border: "none",
-    borderRadius: "8px",
-    background: "#f1f5f9",
-    cursor: "pointer",
-    fontSize: "22px",
-  },
-  detailGrid: {
-    display: "grid",
-    gridTemplateColumns:
-      "repeat(auto-fit, minmax(180px, 1fr))",
-    gap: "12px",
-    marginBottom: "28px",
-  },
-  detail: {
-    border: "1px solid #e5eaf2",
-    borderRadius: "10px",
-    padding: "14px",
-  },
-  detailLabel: {
-    display: "block",
-    color: "#64748b",
-    fontSize: "12px",
-    marginBottom: "7px",
-  },
-  detailValue: {
-    fontSize: "15px",
-  },
-  paymentHistoryHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "12px",
-    marginBottom: "12px",
-  },
-  paymentBalance: {
-    display: "flex",
-    justifyContent: "space-between",
-    background: "#eff6ff",
-    color: "#1e40af",
-    padding: "14px",
-    borderRadius: "10px",
-    marginBottom: "20px",
-  },
-  label: {
-    display: "block",
-    fontSize: "13px",
-    fontWeight: 600,
-    marginBottom: "15px",
-  },
-  input: {
-    display: "block",
-    width: "100%",
-    boxSizing: "border-box",
-    marginTop: "7px",
-    border: "1px solid #d7deea",
-    borderRadius: "9px",
-    padding: "11px 12px",
-    fontSize: "14px",
-  },
-  textarea: {
-    display: "block",
-    width: "100%",
-    boxSizing: "border-box",
-    marginTop: "7px",
-    border: "1px solid #d7deea",
-    borderRadius: "9px",
-    padding: "11px 12px",
-    fontSize: "14px",
-    resize: "vertical",
-  },
-  formActions: {
-    display: "flex",
-    justifyContent: "flex-end",
-    gap: "10px",
-    marginTop: "20px",
-  },
-};
-
-export default Fees;

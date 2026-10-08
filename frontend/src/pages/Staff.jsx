@@ -1,6 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL, getAuthToken } from "../api/config";
+import AppLayout from "../components/AppLayout";
+import {
+  Users,
+  UserCheck,
+  Building,
+  UserX,
+  Plus,
+  Search,
+  Filter,
+  Eye,
+  Edit,
+  ChevronLeft,
+  ChevronRight,
+  Briefcase,
+} from "lucide-react";
 
 export default function Staff() {
   const navigate = useNavigate();
@@ -31,14 +46,9 @@ export default function Staff() {
 
   const getHeaders = () => {
     const token = getToken();
-
     return {
       "Content-Type": "application/json",
-      ...(token
-        ? {
-            Authorization: `Bearer ${token}`,
-          }
-        : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     };
   };
 
@@ -48,45 +58,29 @@ export default function Staff() {
       setError("");
 
       const params = new URLSearchParams({
-        page: page.toString(),
-        page_size: pageSize.toString(),
+        page: String(page),
+        page_size: String(pageSize),
       });
 
-      if (search.trim()) {
-        params.append("search", search.trim());
-      }
+      if (search.trim()) params.append("search", search.trim());
+      if (department.trim()) params.append("department", department.trim());
+      if (status) params.append("status", status);
 
-      if (department) {
-        params.append("department", department);
-      }
+      const response = await fetch(`${API_BASE_URL}/staff?${params.toString()}`, {
+        headers: getHeaders(),
+      });
 
-      if (status) {
-        params.append("status", status);
-      }
-
-      const response = await fetch(
-        `${API_BASE_URL}/staff?${params.toString()}`,
-        {
-          method: "GET",
-          headers: getHeaders(),
-        }
-      );
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-
-        throw new Error(
-          data.detail || "Unable to load staff records."
-        );
+        throw new Error(data.detail || "Unable to fetch staff list.");
       }
 
-      const data = await response.json();
-
       setStaff(data.items || []);
-      setTotalPages(data.pages || 1);
+      setTotalPages(data.total_pages || 1);
     } catch (err) {
       console.error(err);
-      setError(err.message || "Something went wrong.");
+      setError(err.message || "Failed to load staff.");
     } finally {
       setLoading(false);
     }
@@ -94,27 +88,19 @@ export default function Staff() {
 
   const loadSummary = async () => {
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/staff/summary`,
-        {
-          method: "GET",
-          headers: getHeaders(),
-        }
-      );
-
-      if (!response.ok) {
-        return;
-      }
-
-      const data = await response.json();
-
-      setSummary({
-        total_staff: data.total_staff || 0,
-        active_staff: data.active_staff || 0,
-        inactive_staff: data.inactive_staff || 0,
-        other_status_staff: data.other_status_staff || 0,
-        total_departments: data.total_departments || 0,
+      const response = await fetch(`${API_BASE_URL}/staff/summary/overview`, {
+        headers: getHeaders(),
       });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok) {
+        setSummary({
+          total_staff: data.total_staff || 0,
+          active_staff: data.active_staff || 0,
+          inactive_staff: data.inactive_staff || 0,
+          other_status_staff: data.other_status_staff || 0,
+          total_departments: data.total_departments || 0,
+        });
+      }
     } catch (err) {
       console.error("Summary error:", err);
     }
@@ -122,25 +108,20 @@ export default function Staff() {
 
   useEffect(() => {
     loadStaff();
-  }, [page, search, department, status]);
+  }, [page, department, status]);
 
   useEffect(() => {
     loadSummary();
   }, []);
 
-  const handleSearch = (event) => {
-    setSearch(event.target.value);
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
     setPage(1);
   };
 
-  const handleDepartmentChange = (event) => {
-    setDepartment(event.target.value);
-    setPage(1);
-  };
-
-  const handleStatusChange = (event) => {
-    setStatus(event.target.value);
-    setPage(1);
+  const triggerSearch = (e) => {
+    e.preventDefault();
+    loadStaff();
   };
 
   const clearFilters = () => {
@@ -150,479 +131,189 @@ export default function Staff() {
     setPage(1);
   };
 
-  const getFullName = (person) => {
-    return `${person.first_name || ""} ${
-      person.last_name || ""
-    }`.trim();
-  };
-
-  const getInitials = (person) => {
-    const first = person.first_name?.charAt(0) || "";
-    const last = person.last_name?.charAt(0) || "";
-
-    return `${first}${last}`.toUpperCase();
-  };
-
-  const getStatusClass = (staffStatus) => {
-    switch ((staffStatus || "").toUpperCase()) {
-      case "ACTIVE":
-        return "status-active";
-
-      case "INACTIVE":
-        return "status-inactive";
-
-      default:
-        return "status-other";
-    }
-  };
+  const getFullName = (p) => `${p.first_name || ""} ${p.last_name || ""}`.trim();
+  const getInitials = (p) =>
+    `${p.first_name?.charAt(0) || ""}${p.last_name?.charAt(0) || ""}`.toUpperCase() || "ST";
 
   return (
-    <div
-      style={{
-        padding: "30px",
-        background: "#f7f8fc",
-        minHeight: "100vh",
-      }}
+    <AppLayout
+      title="Staff & Human Capital"
+      subtitle="Institutional faculty directory, contracts, performance & records"
     >
-      {/* =====================================================
-          HEADER
-      ====================================================== */}
+      <div className="staff-page-wrap">
+        {/* Top Action & KPI */}
+        <div className="staff-header-row">
+          <div className="stats-cards-strip">
+            <SummaryPill
+              icon={Users}
+              label="Total Faculty"
+              value={summary.total_staff}
+              color="#6366f1"
+            />
+            <SummaryPill
+              icon={UserCheck}
+              label="Active Staff"
+              value={summary.active_staff}
+              color="#10b981"
+            />
+            <SummaryPill
+              icon={UserX}
+              label="Inactive/Leave"
+              value={summary.inactive_staff}
+              color="#f59e0b"
+            />
+            <SummaryPill
+              icon={Building}
+              label="Departments"
+              value={summary.total_departments}
+              color="#06b6d4"
+            />
+          </div>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "25px",
-          gap: "20px",
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: "30px",
-              fontWeight: "700",
-              color: "#172033",
-            }}
+          <button
+            onClick={() => navigate("/staff/new")}
+            className="create-staff-btn"
           >
-            Staff Management
-          </h1>
-
-          <p
-            style={{
-              marginTop: "7px",
-              color: "#697386",
-              fontSize: "14px",
-            }}
-          >
-            Manage teachers, administrators and school staff
-            from one place.
-          </p>
+            <Plus size={16} />
+            <span>Onboard Staff</span>
+          </button>
         </div>
 
-        <button
-          onClick={() => navigate("/staff/new")}
-          style={{
-            border: "none",
-            background: "#2563eb",
-            color: "#ffffff",
-            padding: "12px 20px",
-            borderRadius: "8px",
-            fontSize: "14px",
-            fontWeight: "600",
-            cursor: "pointer",
-          }}
-        >
-          + Add Staff
-        </button>
-      </div>
+        {/* Filter Control Bar */}
+        <form onSubmit={triggerSearch} className="dark-filter-bar">
+          <div className="search-field">
+            <Search size={16} className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search by name, ID, or email..."
+              value={search}
+              onChange={handleSearch}
+              className="filter-input"
+            />
+          </div>
 
-      {/* =====================================================
-          SUMMARY CARDS
-      ====================================================== */}
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "16px",
-          marginBottom: "25px",
-        }}
-      >
-        <SummaryCard
-          title="Total Staff"
-          value={summary.total_staff}
-          icon="👥"
-        />
-
-        <SummaryCard
-          title="Active Staff"
-          value={summary.active_staff}
-          icon="✓"
-        />
-
-        <SummaryCard
-          title="Inactive Staff"
-          value={summary.inactive_staff}
-          icon="○"
-        />
-
-        <SummaryCard
-          title="Departments"
-          value={summary.total_departments}
-          icon="🏢"
-        />
-      </div>
-
-      {/* =====================================================
-          FILTER BAR
-      ====================================================== */}
-
-      <div
-        style={{
-          background: "#ffffff",
-          padding: "18px",
-          borderRadius: "12px",
-          border: "1px solid #e5e7eb",
-          marginBottom: "20px",
-        }}
-      >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "minmax(220px, 1fr) 180px 160px auto",
-            gap: "12px",
-            alignItems: "center",
-          }}
-        >
-          <input
-            type="text"
-            placeholder="Search staff..."
-            value={search}
-            onChange={handleSearch}
-            style={inputStyle}
-          />
-
-          <input
-            type="text"
-            placeholder="Department"
-            value={department}
-            onChange={handleDepartmentChange}
-            style={inputStyle}
-          />
+          <div className="dept-field">
+            <Briefcase size={15} className="dept-icon" />
+            <input
+              type="text"
+              placeholder="Department"
+              value={department}
+              onChange={(e) => {
+                setDepartment(e.target.value);
+                setPage(1);
+              }}
+              className="filter-input"
+            />
+          </div>
 
           <select
             value={status}
-            onChange={handleStatusChange}
-            style={inputStyle}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
+            className="filter-select"
           >
-            <option value="">All Status</option>
+            <option value="">All Statuses</option>
             <option value="ACTIVE">Active</option>
             <option value="INACTIVE">Inactive</option>
           </select>
 
           <button
+            type="button"
             onClick={clearFilters}
-            style={{
-              padding: "10px 15px",
-              borderRadius: "7px",
-              border: "1px solid #d1d5db",
-              background: "#ffffff",
-              cursor: "pointer",
-              fontWeight: "500",
-            }}
+            className="filter-clear-btn"
           >
             Clear
           </button>
-        </div>
-      </div>
+        </form>
 
-      {/* =====================================================
-          ERROR
-      ====================================================== */}
+        {error && <div className="staff-error-banner">{error}</div>}
 
-      {error && (
-        <div
-          style={{
-            background: "#fef2f2",
-            color: "#b91c1c",
-            padding: "14px 16px",
-            borderRadius: "8px",
-            border: "1px solid #fecaca",
-            marginBottom: "20px",
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      {/* =====================================================
-          STAFF TABLE
-      ====================================================== */}
-
-      <div
-        style={{
-          background: "#ffffff",
-          borderRadius: "12px",
-          border: "1px solid #e5e7eb",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            padding: "18px 20px",
-            borderBottom: "1px solid #e5e7eb",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <div>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: "18px",
-                color: "#172033",
-              }}
-            >
-              Staff Directory
-            </h2>
-
-            <p
-              style={{
-                margin: "4px 0 0",
-                color: "#6b7280",
-                fontSize: "13px",
-              }}
-            >
-              {summary.total_staff} staff members
-            </p>
-          </div>
-
-          <button
-            onClick={() => {
-              loadStaff();
-              loadSummary();
-            }}
-            style={{
-              border: "1px solid #d1d5db",
-              background: "#ffffff",
-              padding: "8px 12px",
-              borderRadius: "7px",
-              cursor: "pointer",
-            }}
-          >
-            ↻ Refresh
-          </button>
-        </div>
-
-        {loading ? (
-          <div
-            style={{
-              padding: "50px",
-              textAlign: "center",
-              color: "#6b7280",
-            }}
-          >
-            Loading staff...
-          </div>
-        ) : staff.length === 0 ? (
-          <div
-            style={{
-              padding: "60px 20px",
-              textAlign: "center",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "40px",
-                marginBottom: "12px",
-              }}
-            >
-              👥
+        {/* Main Staff Table Card */}
+        <div className="staff-table-card">
+          <div className="table-header-row">
+            <div>
+              <h3 className="table-title">Staff Members Roster</h3>
+              <p className="table-sub">Showing authenticated employee credentials</p>
             </div>
-
-            <h3
-              style={{
-                margin: "0 0 6px",
-                color: "#374151",
-              }}
-            >
-              No staff found
-            </h3>
-
-            <p
-              style={{
-                margin: 0,
-                color: "#6b7280",
-              }}
-            >
-              Add your first staff member to get started.
-            </p>
+            <span className="roster-count-badge">
+              Page {page} of {totalPages}
+            </span>
           </div>
-        ) : (
-          <>
-            <div style={{ overflowX: "auto" }}>
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  minWidth: "900px",
-                }}
-              >
+
+          {loading ? (
+            <div className="table-loader-wrap">
+              <div className="spinner"></div>
+              <span>Synchronizing faculty records...</span>
+            </div>
+          ) : staff.length === 0 ? (
+            <div className="table-empty-wrap">
+              <Users size={36} className="empty-icon" />
+              <h4>No staff members match the specified criteria</h4>
+              <p>Try resetting filters or adding a new staff account.</p>
+            </div>
+          ) : (
+            <div className="table-scroll-container">
+              <table className="dark-roster-table">
                 <thead>
-                  <tr
-                    style={{
-                      background: "#f9fafb",
-                      borderBottom: "1px solid #e5e7eb",
-                    }}
-                  >
-                    <th style={thStyle}>Staff</th>
-                    <th style={thStyle}>Staff ID</th>
-                    <th style={thStyle}>Department</th>
-                    <th style={thStyle}>Designation</th>
-                    <th style={thStyle}>Contact</th>
-                    <th style={thStyle}>Status</th>
-                    <th style={thStyle}>Actions</th>
+                  <tr>
+                    <th>Staff Member</th>
+                    <th>Staff ID</th>
+                    <th>Department</th>
+                    <th>Designation</th>
+                    <th>Contact</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: "right" }}>Actions</th>
                   </tr>
                 </thead>
-
                 <tbody>
-                  {staff.map((person) => (
-                    <tr
-                      key={person.id}
-                      style={{
-                        borderBottom:
-                          "1px solid #f0f1f3",
-                      }}
-                    >
-                      <td style={tdStyle}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "11px",
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: "38px",
-                              height: "38px",
-                              borderRadius: "50%",
-                              background: "#e8eefc",
-                              color: "#2563eb",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontWeight: "700",
-                              fontSize: "13px",
-                            }}
-                          >
-                            {getInitials(person)}
-                          </div>
-
+                  {staff.map((p) => (
+                    <tr key={p.id}>
+                      <td>
+                        <div className="person-identity">
+                          <div className="person-avatar">{getInitials(p)}</div>
                           <div>
-                            <div
-                              style={{
-                                fontWeight: "600",
-                                color: "#172033",
-                              }}
-                            >
-                              {getFullName(person)}
-                            </div>
-
-                            <div
-                              style={{
-                                color: "#6b7280",
-                                fontSize: "12px",
-                                marginTop: "2px",
-                              }}
-                            >
-                              {person.email || "No email"}
-                            </div>
+                            <div className="person-fullname">{getFullName(p)}</div>
+                            <div className="person-email">{p.email || "No email"}</div>
                           </div>
                         </div>
                       </td>
-
-                      <td style={tdStyle}>
+                      <td>
+                        <span className="staff-id-pill">{p.staff_id || "—"}</span>
+                      </td>
+                      <td>
+                        <span className="dept-tag">{p.department || "General"}</span>
+                      </td>
+                      <td className="designation-text">{p.designation || "Staff"}</td>
+                      <td className="phone-text">{p.phone || "—"}</td>
+                      <td>
                         <span
-                          style={{
-                            fontWeight: "600",
-                            color: "#374151",
-                          }}
+                          className={`badge ${
+                            p.status === "ACTIVE"
+                              ? "badge-success"
+                              : "badge-warning"
+                          }`}
                         >
-                          {person.staff_id}
+                          {p.status || "ACTIVE"}
                         </span>
                       </td>
-
-                      <td style={tdStyle}>
-                        {person.department || "—"}
-                      </td>
-
-                      <td style={tdStyle}>
-                        {person.designation || "—"}
-                      </td>
-
-                      <td style={tdStyle}>
-                        {person.phone || "—"}
-                      </td>
-
-                      <td style={tdStyle}>
-                        <span
-                          className={getStatusClass(
-                            person.status
-                          )}
-                          style={{
-                            display: "inline-block",
-                            padding: "5px 9px",
-                            borderRadius: "20px",
-                            fontSize: "12px",
-                            fontWeight: "600",
-                            background:
-                              person.status === "ACTIVE"
-                                ? "#dcfce7"
-                                : "#f3f4f6",
-                            color:
-                              person.status === "ACTIVE"
-                                ? "#166534"
-                                : "#4b5563",
-                          }}
-                        >
-                          {person.status || "UNKNOWN"}
-                        </span>
-                      </td>
-
-                      <td style={tdStyle}>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "7px",
-                          }}
-                        >
+                      <td>
+                        <div className="action-buttons-cell">
                           <button
-                            onClick={() =>
-                              navigate(
-                                `/staff/${person.id}`
-                              )
-                            }
-                            style={actionButtonStyle}
+                            onClick={() => navigate(`/staff/${p.id}`)}
+                            className="row-btn view-btn"
+                            title="View Dossier"
                           >
-                            View
+                            <Eye size={14} />
+                            <span>View</span>
                           </button>
-
                           <button
-                            onClick={() =>
-                              navigate(
-                                `/staff/${person.id}/edit`
-                              )
-                            }
-                            style={actionButtonStyle}
+                            onClick={() => navigate(`/staff/${p.id}/edit`)}
+                            className="row-btn edit-btn"
+                            title="Edit Record"
                           >
-                            Edit
+                            <Edit size={14} />
                           </button>
                         </div>
                       </td>
@@ -631,179 +322,424 @@ export default function Staff() {
                 </tbody>
               </table>
             </div>
+          )}
 
-            {/* =================================================
-                PAGINATION
-            ================================================== */}
+          {/* Pagination */}
+          <div className="table-pagination">
+            <span className="pagination-info">
+              Showing page <strong>{page}</strong> of <strong>{totalPages}</strong>
+            </span>
 
-            <div
-              style={{
-                padding: "15px 20px",
-                borderTop: "1px solid #e5e7eb",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span
-                style={{
-                  color: "#6b7280",
-                  fontSize: "13px",
-                }}
+            <div className="pagination-controls">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((c) => c - 1)}
+                className="pag-btn"
               >
-                Page {page} of {totalPages}
-              </span>
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: "8px",
-                }}
+                <ChevronLeft size={16} />
+                <span>Prev</span>
+              </button>
+              <button
+                disabled={page >= totalPages}
+                onClick={() => setPage((c) => c + 1)}
+                className="pag-btn"
               >
-                <button
-                  disabled={page <= 1}
-                  onClick={() =>
-                    setPage((current) => current - 1)
-                  }
-                  style={{
-                    ...paginationButtonStyle,
-                    opacity: page <= 1 ? 0.5 : 1,
-                  }}
-                >
-                  Previous
-                </button>
-
-                <button
-                  disabled={page >= totalPages}
-                  onClick={() =>
-                    setPage((current) => current + 1)
-                  }
-                  style={{
-                    ...paginationButtonStyle,
-                    opacity:
-                      page >= totalPages ? 0.5 : 1,
-                  }}
-                >
-                  Next
-                </button>
-              </div>
+                <span>Next</span>
+                <ChevronRight size={16} />
+              </button>
             </div>
-          </>
-        )}
+          </div>
+        </div>
       </div>
-    </div>
+
+      <style>{`
+        .staff-page-wrap {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+          max-width: 1400px;
+          margin: 0 auto;
+        }
+
+        .staff-header-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 16px;
+        }
+
+        .stats-cards-strip {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: 14px;
+          flex: 1;
+        }
+
+        .summary-pill {
+          background: #111726;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 14px;
+          padding: 14px 18px;
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+        }
+
+        .summary-pill-icon {
+          width: 38px;
+          height: 38px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .summary-pill-label {
+          font-size: 11px;
+          font-weight: 600;
+          color: #94a3b8;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .summary-pill-val {
+          font-family: 'Outfit', sans-serif;
+          font-size: 22px;
+          font-weight: 800;
+          color: #ffffff;
+          margin: 2px 0 0;
+        }
+
+        .create-staff-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 12px 22px;
+          background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
+          color: #ffffff;
+          border: none;
+          border-radius: 12px;
+          font-size: 13.5px;
+          font-weight: 600;
+          cursor: pointer;
+          box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+          transition: all 0.2s;
+        }
+
+        .create-staff-btn:hover {
+          transform: translateY(-1px);
+          filter: brightness(1.1);
+          box-shadow: 0 6px 22px rgba(99, 102, 241, 0.5);
+        }
+
+        .dark-filter-bar {
+          display: grid;
+          grid-template-columns: 1.8fr 1fr 160px auto;
+          gap: 12px;
+          align-items: center;
+          background: #111726;
+          padding: 14px 18px;
+          border-radius: 14px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .search-field, .dept-field {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+
+        .search-icon, .dept-icon {
+          position: absolute;
+          left: 12px;
+          color: #64748b;
+          pointer-events: none;
+        }
+
+        .filter-input {
+          width: 100%;
+          padding: 10px 14px 10px 38px !important;
+          background: #0b0f19 !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          border-radius: 10px !important;
+          color: #ffffff !important;
+          font-size: 13px !important;
+        }
+
+        .filter-select {
+          padding: 10px 14px !important;
+          background: #0b0f19 !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          border-radius: 10px !important;
+          color: #cbd5e1 !important;
+          font-size: 13px !important;
+        }
+
+        .filter-clear-btn {
+          padding: 10px 16px;
+          background: #1a243a;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: #94a3b8;
+          border-radius: 10px;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .filter-clear-btn:hover {
+          color: #ffffff;
+          background: #222e49;
+        }
+
+        .staff-error-banner {
+          background: rgba(244, 63, 94, 0.15);
+          border: 1px solid rgba(244, 63, 94, 0.3);
+          color: #fb7185;
+          padding: 12px 18px;
+          border-radius: 10px;
+          font-size: 13px;
+        }
+
+        .staff-table-card {
+          background: #111726;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 18px;
+          overflow: hidden;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .table-header-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 20px 24px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .table-title {
+          font-family: 'Outfit', sans-serif;
+          font-size: 18px;
+          font-weight: 700;
+          color: #ffffff;
+          margin: 0;
+        }
+
+        .table-sub {
+          font-size: 12.5px;
+          color: #64748b;
+          margin: 3px 0 0;
+        }
+
+        .roster-count-badge {
+          font-size: 11.5px;
+          color: #818cf8;
+          background: rgba(99, 102, 241, 0.12);
+          border: 1px solid rgba(99, 102, 241, 0.25);
+          padding: 4px 10px;
+          border-radius: 6px;
+          font-weight: 600;
+        }
+
+        .table-scroll-container {
+          overflow-x: auto;
+        }
+
+        .dark-roster-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        .person-identity {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .person-avatar {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+          color: #ffffff;
+          font-family: 'Outfit', sans-serif;
+          font-weight: 700;
+          font-size: 13px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .person-fullname {
+          font-weight: 600;
+          color: #f8fafc;
+          font-size: 13.5px;
+        }
+
+        .person-email {
+          font-size: 11.5px;
+          color: #64748b;
+        }
+
+        .staff-id-pill {
+          font-family: var(--font-mono);
+          font-size: 12px;
+          color: #94a3b8;
+          background: rgba(255, 255, 255, 0.04);
+          padding: 3px 8px;
+          border-radius: 6px;
+          border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .dept-tag {
+          font-size: 12px;
+          color: #cbd5e1;
+          background: #172033;
+          border: 1px solid rgba(255, 255, 255, 0.07);
+          padding: 3px 8px;
+          border-radius: 6px;
+        }
+
+        .designation-text {
+          font-size: 13px;
+          color: #94a3b8;
+        }
+
+        .phone-text {
+          font-size: 12.5px;
+          color: #64748b;
+        }
+
+        .action-buttons-cell {
+          display: flex;
+          justify-content: flex-end;
+          gap: 6px;
+        }
+
+        .row-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 10px;
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .view-btn {
+          background: rgba(99, 102, 241, 0.12);
+          border: 1px solid rgba(99, 102, 241, 0.25);
+          color: #a5b4fc;
+        }
+
+        .view-btn:hover {
+          background: rgba(99, 102, 241, 0.24);
+          color: #ffffff;
+        }
+
+        .edit-btn {
+          background: #172033;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: #94a3b8;
+        }
+
+        .edit-btn:hover {
+          background: #1f2b45;
+          color: #ffffff;
+        }
+
+        .table-pagination {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 16px 24px;
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          background: #0c101a;
+        }
+
+        .pagination-info {
+          font-size: 12.5px;
+          color: #64748b;
+        }
+
+        .pagination-info strong {
+          color: #cbd5e1;
+        }
+
+        .pagination-controls {
+          display: flex;
+          gap: 8px;
+        }
+
+        .pag-btn {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 6px 12px;
+          background: #172033;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 8px;
+          color: #cbd5e1;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .pag-btn:hover:not(:disabled) {
+          background: #1f2b45;
+          color: #ffffff;
+        }
+
+        .pag-btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+
+        .table-loader-wrap, .table-empty-wrap {
+          padding: 60px 20px;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 12px;
+          color: #64748b;
+        }
+
+        .empty-icon {
+          color: #334155;
+        }
+
+        @media (max-width: 850px) {
+          .dark-filter-bar {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+    </AppLayout>
   );
 }
 
-
-/* ============================================================
-   COMPONENTS
-============================================================ */
-
-function SummaryCard({ title, value, icon }) {
+function SummaryPill({ icon: Icon, label, value, color }) {
   return (
-    <div
-      style={{
-        background: "#ffffff",
-        border: "1px solid #e5e7eb",
-        borderRadius: "12px",
-        padding: "20px",
-      }}
-    >
+    <div className="summary-pill">
       <div
+        className="summary-pill-icon"
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          background: `${color}18`,
+          color: color,
         }}
       >
-        <div>
-          <p
-            style={{
-              margin: 0,
-              color: "#6b7280",
-              fontSize: "13px",
-            }}
-          >
-            {title}
-          </p>
-
-          <h2
-            style={{
-              margin: "8px 0 0",
-              fontSize: "26px",
-              color: "#172033",
-            }}
-          >
-            {value}
-          </h2>
-        </div>
-
-        <div
-          style={{
-            width: "42px",
-            height: "42px",
-            borderRadius: "10px",
-            background: "#eff6ff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "20px",
-          }}
-        >
-          {icon}
-        </div>
+        <Icon size={18} />
+      </div>
+      <div>
+        <div className="summary-pill-label">{label}</div>
+        <div className="summary-pill-val">{value}</div>
       </div>
     </div>
   );
 }
-
-
-/* ============================================================
-   STYLES
-============================================================ */
-
-const inputStyle = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "10px 12px",
-  borderRadius: "7px",
-  border: "1px solid #d1d5db",
-  outline: "none",
-  fontSize: "14px",
-  background: "#ffffff",
-};
-
-const thStyle = {
-  textAlign: "left",
-  padding: "13px 16px",
-  fontSize: "12px",
-  fontWeight: "700",
-  color: "#6b7280",
-  textTransform: "uppercase",
-};
-
-const tdStyle = {
-  padding: "14px 16px",
-  fontSize: "13px",
-  color: "#374151",
-};
-
-const actionButtonStyle = {
-  border: "1px solid #d1d5db",
-  background: "#ffffff",
-  padding: "6px 10px",
-  borderRadius: "6px",
-  cursor: "pointer",
-  fontSize: "12px",
-  fontWeight: "600",
-};
-
-const paginationButtonStyle = {
-  border: "1px solid #d1d5db",
-  background: "#ffffff",
-  padding: "7px 12px",
-  borderRadius: "6px",
-  cursor: "pointer",
-  fontSize: "12px",
-};

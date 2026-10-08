@@ -1,117 +1,62 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-
+import React, { useEffect, useMemo, useState } from "react";
+import AppLayout from "../components/AppLayout";
 import api from "../api/axios";
+import {
+  CalendarCheck,
+  Calendar,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  UserCheck,
+  Search,
+  Filter,
+  Save,
+  RefreshCw,
+  History,
+  X,
+  AlertCircle,
+  Check,
+  ChevronRight
+} from "lucide-react";
 
-const STATUS_OPTIONS = [
-  "PRESENT",
-  "ABSENT",
-  "LATE",
-  "LEAVE",
-];
+const STATUS_OPTIONS = ["PRESENT", "ABSENT", "LATE", "LEAVE"];
 
-/*
- * Convert different API response formats into arrays.
- *
- * Supported:
- * [
- *   ...
- * ]
- *
- * {
- *   items: [...]
- * }
- *
- * {
- *   students: [...]
- * }
- *
- * {
- *   data: [...]
- * }
- *
- * {
- *   results: [...]
- * }
- */
 function normalizeArray(data, preferredKeys = []) {
-  if (Array.isArray(data)) {
-    return data;
-  }
-
+  if (Array.isArray(data)) return data;
   for (const key of preferredKeys) {
-    if (Array.isArray(data?.[key])) {
-      return data[key];
-    }
+    if (Array.isArray(data?.[key])) return data[key];
   }
-
-  if (Array.isArray(data?.items)) {
-    return data.items;
-  }
-
-  if (Array.isArray(data?.data)) {
-    return data.data;
-  }
-
-  if (Array.isArray(data?.results)) {
-    return data.results;
-  }
-
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.results)) return data.results;
   return [];
 }
 
 function getToday() {
   const today = new Date();
-
   const year = today.getFullYear();
-
-  const month = String(
-    today.getMonth() + 1
-  ).padStart(2, "0");
-
-  const day = String(
-    today.getDate()
-  ).padStart(2, "0");
-
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
-function Attendance() {
-  const navigate = useNavigate();
-
+export default function Attendance() {
   const [students, setStudents] = useState([]);
   const [attendance, setAttendance] = useState({});
   const [remarks, setRemarks] = useState({});
 
-  const [attendanceDate, setAttendanceDate] =
-    useState(getToday());
+  const [attendanceDate, setAttendanceDate] = useState(getToday());
+  const [classFilter, setClassFilter] = useState("");
+  const [sectionFilter, setSectionFilter] = useState("");
+  const [search, setSearch] = useState("");
 
-  const [classFilter, setClassFilter] =
-    useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-  const [sectionFilter, setSectionFilter] =
-    useState("");
-
-  const [search, setSearch] =
-    useState("");
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [saving, setSaving] =
-    useState(false);
-
-  const [message, setMessage] =
-    useState("");
-
-  const [error, setError] =
-    useState("");
-
-  const [historyStudent, setHistoryStudent] =
-    useState(null);
-
-  const [historyLoading, setHistoryLoading] =
-    useState(false);
+  const [historyStudent, setHistoryStudent] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     loadStudents();
@@ -125,40 +70,13 @@ function Attendance() {
     try {
       setLoading(true);
       setError("");
-
-      const response =
-        await api.get("/students");
-
-      console.log(
-        "Attendance - Students API response:",
-        response.data
-      );
-
-      const studentList =
-        normalizeArray(response.data, [
-          "students",
-          "items",
-        ]);
-
-      console.log(
-        "Attendance - Normalized students:",
-        studentList
-      );
-
-      setStudents(studentList);
+      const response = await api.get("/students");
+      const list = normalizeArray(response.data, ["students", "items"]);
+      setStudents(list);
     } catch (err) {
-      console.error(
-        "Attendance - students loading error:",
-        err
-      );
-
+      console.error("Attendance - load students error:", err);
       setStudents([]);
-
-      setError(
-        err.response?.data?.detail ||
-          err.response?.data?.message ||
-          "Unable to load students."
-      );
+      setError(err.response?.data?.detail || "Unable to load student cohort.");
     } finally {
       setLoading(false);
     }
@@ -167,283 +85,97 @@ function Attendance() {
   async function loadAttendance() {
     try {
       setError("");
+      const response = await api.get("/attendance", {
+        params: { attendance_date: attendanceDate },
+      });
 
-      const response =
-        await api.get("/attendance", {
-          params: {
-            attendance_date:
-              attendanceDate,
-          },
-        });
+      const records = normalizeArray(response.data, ["attendance", "records", "items", "data"]);
+      const attMap = {};
+      const remMap = {};
 
-      console.log(
-        "Attendance API response:",
-        response.data
-      );
-
-      const attendanceRecords =
-        normalizeArray(response.data, [
-          "attendance",
-          "records",
-          "items",
-          "data",
-          "results",
-        ]);
-
-      console.log(
-        "Normalized attendance records:",
-        attendanceRecords
-      );
-
-      const attendanceMap = {};
-      const remarksMap = {};
-
-      attendanceRecords.forEach(
-        (record) => {
-          if (
-            !record ||
-            typeof record !== "object"
-          ) {
-            return;
-          }
-
-          if (
-            record.student_id !==
-            undefined
-          ) {
-            attendanceMap[
-              record.student_id
-            ] = record.status;
-
-            remarksMap[
-              record.student_id
-            ] = record.remarks || "";
-          }
+      records.forEach((r) => {
+        if (r && r.student_id !== undefined) {
+          attMap[r.student_id] = r.status;
+          remMap[r.student_id] = r.remarks || "";
         }
-      );
+      });
 
-      setAttendance(attendanceMap);
-      setRemarks(remarksMap);
+      setAttendance(attMap);
+      setRemarks(remMap);
     } catch (err) {
-      console.error(
-        "Attendance loading error:",
-        err
-      );
-
-      /*
-       * If attendance endpoint does not have
-       * records for the selected date, don't
-       * destroy the student list.
-       */
-      if (
-        err.response?.status !== 404
-      ) {
-        setError(
-          err.response?.data?.detail ||
-            err.response?.data?.message ||
-            "Unable to load attendance."
-        );
+      if (err.response?.status !== 404) {
+        setError(err.response?.data?.detail || "Unable to retrieve attendance ledger.");
       }
-
       setAttendance({});
       setRemarks({});
     }
   }
 
-  /*
-   * Extra safety:
-   * students should always be an array.
-   */
-  const safeStudents = Array.isArray(
-    students
-  )
-    ? students
-    : [];
+  const safeStudents = Array.isArray(students) ? students : [];
 
   const classOptions = useMemo(() => {
-    return [
-      ...new Set(
-        safeStudents
-          .map(
-            (student) =>
-              student?.class_name
-          )
-          .filter(Boolean)
-      ),
-    ].sort();
+    return [...new Set(safeStudents.map((s) => s?.class_name).filter(Boolean))].sort();
   }, [safeStudents]);
 
   const sectionOptions = useMemo(() => {
     return [
       ...new Set(
         safeStudents
-          .filter(
-            (student) =>
-              !classFilter ||
-              student?.class_name ===
-                classFilter
-          )
-          .map(
-            (student) =>
-              student?.section
-          )
+          .filter((s) => !classFilter || s?.class_name === classFilter)
+          .map((s) => s?.section)
           .filter(Boolean)
       ),
     ].sort();
-  }, [
-    safeStudents,
-    classFilter,
-  ]);
+  }, [safeStudents, classFilter]);
 
   const filteredStudents = useMemo(() => {
-    const searchValue =
-      search.trim().toLowerCase();
+    const q = search.trim().toLowerCase();
+    return safeStudents.filter((s) => {
+      if (!s) return false;
+      const matchesClass = !classFilter || s.class_name === classFilter;
+      const matchesSection = !sectionFilter || s.section === sectionFilter;
+      const fullName = [s.first_name, s.middle_name, s.last_name].filter(Boolean).join(" ").toLowerCase();
+      const adm = String(s.admission_number || "").toLowerCase();
+      const matchesSearch = !q || fullName.includes(q) || adm.includes(q);
+      return matchesClass && matchesSection && matchesSearch;
+    });
+  }, [safeStudents, classFilter, sectionFilter, search]);
 
-    return safeStudents.filter(
-      (student) => {
-        if (
-          !student ||
-          typeof student !== "object"
-        ) {
-          return false;
-        }
-
-        const matchesClass =
-          !classFilter ||
-          student.class_name ===
-            classFilter;
-
-        const matchesSection =
-          !sectionFilter ||
-          student.section ===
-            sectionFilter;
-
-        const fullName = [
-          student.first_name,
-          student.middle_name,
-          student.last_name,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-
-        const matchesSearch =
-          !searchValue ||
-          fullName.includes(
-            searchValue
-          ) ||
-          String(
-            student.admission_number ||
-              ""
-          )
-            .toLowerCase()
-            .includes(searchValue);
-
-        return (
-          matchesClass &&
-          matchesSection &&
-          matchesSearch
-        );
-      }
-    );
-  }, [
-    safeStudents,
-    classFilter,
-    sectionFilter,
-    search,
-  ]);
-
-  const summary = useMemo(() => {
+  const stats = useMemo(() => {
     let present = 0;
     let absent = 0;
     let late = 0;
     let leave = 0;
     let unmarked = 0;
 
-    filteredStudents.forEach(
-      (student) => {
-        const status =
-          attendance[student.id];
+    filteredStudents.forEach((s) => {
+      const st = attendance[s.id];
+      if (st === "PRESENT") present++;
+      else if (st === "ABSENT") absent++;
+      else if (st === "LATE") late++;
+      else if (st === "LEAVE") leave++;
+      else unmarked++;
+    });
 
-        if (status === "PRESENT") {
-          present++;
-        } else if (
-          status === "ABSENT"
-        ) {
-          absent++;
-        } else if (
-          status === "LATE"
-        ) {
-          late++;
-        } else if (
-          status === "LEAVE"
-        ) {
-          leave++;
-        } else {
-          unmarked++;
-        }
-      }
-    );
+    const total = filteredStudents.length;
+    const rate = total > 0 ? Math.round(((present + late) / total) * 100) : 0;
+    return { total, present, absent, late, leave, unmarked, rate };
+  }, [filteredStudents, attendance]);
 
-    const total =
-      filteredStudents.length;
-
-    const attendancePercentage =
-      total > 0
-        ? Math.round(
-            ((present + late) /
-              total) *
-              100
-          )
-        : 0;
-
-    return {
-      total,
-      present,
-      absent,
-      late,
-      leave,
-      unmarked,
-      attendancePercentage,
-    };
-  }, [
-    filteredStudents,
-    attendance,
-  ]);
-
-  function setStudentStatus(
-    studentId,
-    status
-  ) {
-    setAttendance((current) => ({
-      ...current,
-      [studentId]: status,
-    }));
+  function setStudentStatus(id, st) {
+    setAttendance((prev) => ({ ...prev, [id]: st }));
   }
 
-  function setStudentRemarks(
-    studentId,
-    value
-  ) {
-    setRemarks((current) => ({
-      ...current,
-      [studentId]: value,
-    }));
+  function setStudentRemarks(id, val) {
+    setRemarks((prev) => ({ ...prev, [id]: val }));
   }
 
-  function markAll(status) {
-    const updated = {
-      ...attendance,
-    };
-
-    filteredStudents.forEach(
-      (student) => {
-        updated[student.id] =
-          status;
-      }
-    );
-
-    setAttendance(updated);
+  function markAll(st) {
+    const next = { ...attendance };
+    filteredStudents.forEach((s) => {
+      next[s.id] = st;
+    });
+    setAttendance(next);
   }
 
   async function saveAttendance() {
@@ -452,61 +184,29 @@ function Attendance() {
       setMessage("");
       setError("");
 
-      const records =
-        filteredStudents
-          .filter(
-            (student) =>
-              attendance[
-                student.id
-              ]
-          )
-          .map((student) => ({
-            student_id: student.id,
-            status:
-              attendance[
-                student.id
-              ],
-            remarks:
-              remarks[
-                student.id
-              ] || null,
-          }));
+      const records = filteredStudents
+        .filter((s) => attendance[s.id])
+        .map((s) => ({
+          student_id: s.id,
+          status: attendance[s.id],
+          remarks: remarks[s.id] || null,
+        }));
 
       if (!records.length) {
-        setError(
-          "Please mark attendance for at least one student."
-        );
-
+        setError("Please mark status for at least one scholar before saving.");
         return;
       }
 
-      const response =
-        await api.post(
-          "/attendance/bulk",
-          {
-            attendance_date:
-              attendanceDate,
-            records,
-          }
-        );
+      const response = await api.post("/attendance/bulk", {
+        attendance_date: attendanceDate,
+        records,
+      });
 
-      setMessage(
-        response.data?.message ||
-          "Attendance saved successfully."
-      );
-
+      setMessage(response.data?.message || "Attendance roll saved successfully.");
       await loadAttendance();
     } catch (err) {
-      console.error(
-        "Save attendance error:",
-        err
-      );
-
-      setError(
-        err.response?.data?.detail ||
-          err.response?.data?.message ||
-          "Unable to save attendance."
-      );
+      console.error("Save attendance error:", err);
+      setError(err.response?.data?.detail || "Failed to persist attendance ledger.");
     } finally {
       setSaving(false);
     }
@@ -515,1199 +215,516 @@ function Attendance() {
   async function openHistory(student) {
     try {
       setHistoryLoading(true);
-
-      setHistoryStudent({
-        ...student,
-        history: null,
-      });
-
-      const response =
-        await api.get(
-          `/attendance/student/${student.id}`
-        );
-
-      console.log(
-        "Attendance history response:",
-        response.data
-      );
-
-      const historyData =
-        response.data || {};
-
-      const historyRecords =
-        normalizeArray(historyData, [
-          "records",
-          "attendance",
-          "items",
-          "data",
-        ]);
+      setHistoryStudent({ ...student, history: null });
+      const response = await api.get(`/attendance/student/${student.id}`);
+      const historyData = response.data || {};
+      const historyRecords = normalizeArray(historyData, ["records", "attendance", "items", "data"]);
 
       setHistoryStudent({
         ...student,
         history: {
           ...historyData,
-          records:
-            historyRecords,
+          records: historyRecords,
         },
       });
     } catch (err) {
-      console.error(
-        "Attendance history error:",
-        err
-      );
-
-      setError(
-        err.response?.data?.detail ||
-          err.response?.data?.message ||
-          "Unable to load attendance history."
-      );
-
+      console.error("Attendance history error:", err);
+      setError(err.response?.data?.detail || "Unable to fetch student attendance timeline.");
       setHistoryStudent(null);
     } finally {
       setHistoryLoading(false);
     }
   }
 
-  function closeHistory() {
-    setHistoryStudent(null);
-  }
+  return (
+    <AppLayout
+      title="Daily Attendance Roll"
+      subtitle="Biometric validation, scholar check-ins, and cohort presence ledgers."
+      actions={
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <button
+            onClick={loadAttendance}
+            disabled={saving}
+            className="btn btn-secondary"
+            style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
+          >
+            <RefreshCw size={15} />
+            Sync
+          </button>
+          <button
+            onClick={saveAttendance}
+            disabled={saving}
+            className="btn btn-primary"
+            style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
+          >
+            <Save size={16} />
+            {saving ? "Persisting..." : "Save Roll"}
+          </button>
+        </div>
+      }
+    >
+      {/* STATS HEADER */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: "14px",
+          marginBottom: "24px",
+        }}
+      >
+        <div className="card" style={{ padding: "16px 18px" }}>
+          <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+            Presence Rate
+          </div>
+          <div style={{ fontSize: "26px", fontWeight: 800, color: "var(--accent-cyan)", marginTop: "4px" }}>
+            {stats.rate}%
+          </div>
+          <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>
+            {stats.present + stats.late} of {stats.total} present
+          </div>
+        </div>
 
-  if (loading) {
-    return (
-      <div style={pageStyle}>
-        <div style={centerStyle}>
-          Loading attendance...
+        <div className="card" style={{ padding: "16px 18px" }}>
+          <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+            Present
+          </div>
+          <div style={{ fontSize: "26px", fontWeight: 800, color: "var(--accent-emerald)", marginTop: "4px" }}>
+            {stats.present}
+          </div>
+          <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>On schedule</div>
+        </div>
+
+        <div className="card" style={{ padding: "16px 18px" }}>
+          <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+            Late Arrival
+          </div>
+          <div style={{ fontSize: "26px", fontWeight: 800, color: "var(--accent-amber)", marginTop: "4px" }}>
+            {stats.late}
+          </div>
+          <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>Delayed intake</div>
+        </div>
+
+        <div className="card" style={{ padding: "16px 18px" }}>
+          <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+            Absent
+          </div>
+          <div style={{ fontSize: "26px", fontWeight: 800, color: "var(--accent-rose)", marginTop: "4px" }}>
+            {stats.absent}
+          </div>
+          <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>Unexcused</div>
+        </div>
+
+        <div className="card" style={{ padding: "16px 18px" }}>
+          <div style={{ fontSize: "11px", color: "var(--text-muted)", textTransform: "uppercase", fontWeight: 700 }}>
+            Unmarked
+          </div>
+          <div style={{ fontSize: "26px", fontWeight: 800, color: "var(--text-secondary)", marginTop: "4px" }}>
+            {stats.unmarked}
+          </div>
+          <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>Awaiting check</div>
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div style={pageStyle}>
-      <div style={contentStyle}>
-        <div style={topBarStyle}>
-          <div>
-            <button
-              onClick={() =>
-                navigate(
-                  "/owner-dashboard"
-                )
-              }
-              style={backButtonStyle}
-            >
-              ← Back to Dashboard
-            </button>
+      {/* ALERTS */}
+      {message && (
+        <div
+          style={{
+            background: "rgba(16, 185, 129, 0.12)",
+            border: "1px solid rgba(16, 185, 129, 0.3)",
+            borderRadius: "12px",
+            padding: "14px 18px",
+            marginBottom: "20px",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            color: "#34d399",
+          }}
+        >
+          <Check size={18} />
+          <span style={{ fontSize: "13.5px" }}>{message}</span>
+        </div>
+      )}
 
-            <div
-              style={{
-                marginTop: "16px",
-              }}
-            >
-              <div style={eyebrowStyle}>
-                EDUNEXUS AI
-              </div>
+      {error && (
+        <div
+          style={{
+            background: "rgba(239, 68, 68, 0.12)",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+            borderRadius: "12px",
+            padding: "14px 18px",
+            marginBottom: "20px",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            color: "#f87171",
+          }}
+        >
+          <AlertCircle size={18} />
+          <span style={{ fontSize: "13.5px" }}>{error}</span>
+        </div>
+      )}
 
-              <h1 style={titleStyle}>
-                Attendance Management
-              </h1>
-
-              <p style={subtitleStyle}>
-                Mark, review and manage
-                student attendance from one
-                page.
-              </p>
-            </div>
-          </div>
-
-          <div style={dateBoxStyle}>
-            <label style={labelStyle}>
-              Attendance Date
-            </label>
-
+      {/* CONTROLS & DATE SELECTOR */}
+      <div
+        className="card"
+        style={{
+          padding: "18px 20px",
+          marginBottom: "20px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "14px",
+        }}
+      >
+        <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+          {/* DATE PICKER */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Calendar size={16} style={{ color: "var(--accent-cyan)" }} />
             <input
               type="date"
               value={attendanceDate}
-              onChange={(event) =>
-                setAttendanceDate(
-                  event.target.value
-                )
-              }
-              style={dateInputStyle}
+              onChange={(e) => setAttendanceDate(e.target.value)}
+              className="input-field"
+              style={{ width: "auto", height: "38px", fontSize: "13px" }}
+            />
+          </div>
+
+          {/* CLASS FILTER */}
+          <select
+            value={classFilter}
+            onChange={(e) => {
+              setClassFilter(e.target.value);
+              setSectionFilter("");
+            }}
+            className="input-field"
+            style={{ width: "auto", minWidth: "130px", height: "38px", fontSize: "13px" }}
+          >
+            <option value="">All Classes</option>
+            {classOptions.map((c) => (
+              <option key={c} value={c}>Class {c}</option>
+            ))}
+          </select>
+
+          {/* SECTION FILTER */}
+          <select
+            value={sectionFilter}
+            onChange={(e) => setSectionFilter(e.target.value)}
+            className="input-field"
+            style={{ width: "auto", minWidth: "120px", height: "38px", fontSize: "13px" }}
+          >
+            <option value="">All Sections</option>
+            {sectionOptions.map((s) => (
+              <option key={s} value={s}>Section {s}</option>
+            ))}
+          </select>
+
+          {/* SEARCH */}
+          <div style={{ position: "relative", minWidth: "220px" }}>
+            <Search size={14} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+            <input
+              type="text"
+              placeholder="Search scholar..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="input-field"
+              style={{ paddingLeft: "34px", height: "38px", fontSize: "13px" }}
             />
           </div>
         </div>
 
-        {message && (
-          <div style={successStyle}>
-            {message}
-          </div>
-        )}
-
-        {error && (
-          <div style={errorStyle}>
-            {error}
-          </div>
-        )}
-
-        <div style={summaryGridStyle}>
-          <SummaryCard
-            title="Students"
-            value={summary.total}
-            description="Filtered students"
-          />
-
-          <SummaryCard
-            title="Present"
-            value={summary.present}
-            description="Present today"
-          />
-
-          <SummaryCard
-            title="Absent"
-            value={summary.absent}
-            description="Absent today"
-          />
-
-          <SummaryCard
-            title="Late"
-            value={summary.late}
-            description="Late today"
-          />
-
-          <SummaryCard
-            title="Leave"
-            value={summary.leave}
-            description="On leave"
-          />
-
-          <SummaryCard
-            title="Attendance"
-            value={`${summary.attendancePercentage}%`}
-            description="Present + late"
-          />
+        {/* BULK ACTIONS */}
+        <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+          <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: 600 }}>Mark All:</span>
+          <button
+            type="button"
+            onClick={() => markAll("PRESENT")}
+            style={{
+              padding: "6px 12px",
+              borderRadius: "6px",
+              fontSize: "12px",
+              fontWeight: 700,
+              background: "rgba(16, 185, 129, 0.15)",
+              color: "#34d399",
+              border: "1px solid rgba(16, 185, 129, 0.3)",
+              cursor: "pointer",
+            }}
+          >
+            Present
+          </button>
+          <button
+            type="button"
+            onClick={() => markAll("LATE")}
+            style={{
+              padding: "6px 12px",
+              borderRadius: "6px",
+              fontSize: "12px",
+              fontWeight: 700,
+              background: "rgba(245, 158, 11, 0.15)",
+              color: "#fbbf24",
+              border: "1px solid rgba(245, 158, 11, 0.3)",
+              cursor: "pointer",
+            }}
+          >
+            Late
+          </button>
+          <button
+            type="button"
+            onClick={() => markAll("ABSENT")}
+            style={{
+              padding: "6px 12px",
+              borderRadius: "6px",
+              fontSize: "12px",
+              fontWeight: 700,
+              background: "rgba(239, 68, 68, 0.15)",
+              color: "#f87171",
+              border: "1px solid rgba(239, 68, 68, 0.3)",
+              cursor: "pointer",
+            }}
+          >
+            Absent
+          </button>
         </div>
+      </div>
 
-        <section style={sectionStyle}>
-          <div style={sectionHeaderStyle}>
-            <div>
-              <h2 style={sectionTitleStyle}>
-                Attendance Register
-              </h2>
-
-              <p
-                style={
-                  sectionDescriptionStyle
-                }
-              >
-                Filter students and mark their
-                attendance for the selected date.
-              </p>
-            </div>
-
-            <div style={actionGroupStyle}>
-              <button
-                onClick={() =>
-                  markAll("PRESENT")
-                }
-                style={secondaryButtonStyle}
-              >
-                Mark All Present
-              </button>
-
-              <button
-                onClick={() =>
-                  markAll("ABSENT")
-                }
-                style={secondaryButtonStyle}
-              >
-                Mark All Absent
-              </button>
-
-              <button
-                onClick={saveAttendance}
-                disabled={saving}
-                style={primaryButtonStyle}
-              >
-                {saving
-                  ? "Saving..."
-                  : "Save Attendance"}
-              </button>
-            </div>
+      {/* ROSTER TABLE */}
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        {loading ? (
+          <div style={{ padding: "60px 20px", textAlign: "center" }}>
+            <div
+              style={{
+                width: "36px",
+                height: "36px",
+                border: "3px solid rgba(255, 255, 255, 0.1)",
+                borderTopColor: "var(--accent-indigo)",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+                margin: "0 auto 16px",
+              }}
+            />
+            <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>Retrieving student roster...</p>
           </div>
-
-          <div style={filterGridStyle}>
-            <div>
-              <label style={labelStyle}>
-                Search Student
-              </label>
-
-              <input
-                type="text"
-                value={search}
-                onChange={(event) =>
-                  setSearch(
-                    event.target.value
-                  )
-                }
-                placeholder="Name or admission number"
-                style={inputStyle}
-              />
-            </div>
-
-            <div>
-              <label style={labelStyle}>
-                Class
-              </label>
-
-              <select
-                value={classFilter}
-                onChange={(event) => {
-                  setClassFilter(
-                    event.target.value
-                  );
-
-                  setSectionFilter("");
-                }}
-                style={inputStyle}
-              >
-                <option value="">
-                  All Classes
-                </option>
-
-                {classOptions.map(
-                  (className) => (
-                    <option
-                      key={className}
-                      value={className}
-                    >
-                      {className}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
-
-            <div>
-              <label style={labelStyle}>
-                Section
-              </label>
-
-              <select
-                value={sectionFilter}
-                onChange={(event) =>
-                  setSectionFilter(
-                    event.target.value
-                  )
-                }
-                style={inputStyle}
-              >
-                <option value="">
-                  All Sections
-                </option>
-
-                {sectionOptions.map(
-                  (section) => (
-                    <option
-                      key={section}
-                      value={section}
-                    >
-                      {section}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
+        ) : filteredStudents.length === 0 ? (
+          <div style={{ padding: "60px 20px", textAlign: "center" }}>
+            <CalendarCheck size={44} style={{ color: "var(--text-muted)", opacity: 0.6, margin: "0 auto 14px" }} />
+            <h3 style={{ fontSize: "17px", fontWeight: 600, color: "var(--text-bright)", margin: "0 0 6px" }}>
+              No students found for cohort
+            </h3>
+            <p style={{ color: "var(--text-secondary)", fontSize: "13px" }}>
+              Try adjusting your class or section filters.
+            </p>
           </div>
-
-          <div style={tableWrapperStyle}>
-            <table style={tableStyle}>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table className="dark-table">
               <thead>
                 <tr>
-                  <th style={thStyle}>
-                    Student
-                  </th>
-
-                  <th style={thStyle}>
-                    Admission No.
-                  </th>
-
-                  <th style={thStyle}>
-                    Class
-                  </th>
-
-                  <th style={thStyle}>
-                    Attendance
-                  </th>
-
-                  <th style={thStyle}>
-                    Remarks
-                  </th>
-
-                  <th style={thStyle}>
-                    History
-                  </th>
+                  <th>Scholar</th>
+                  <th>Admission ID</th>
+                  <th>Cohort</th>
+                  <th>Attendance Status</th>
+                  <th>Remarks / Notes</th>
+                  <th style={{ textAlign: "right" }}>Log</th>
                 </tr>
               </thead>
-
               <tbody>
-                {filteredStudents.length ===
-                0 ? (
-                  <tr>
-                    <td
-                      colSpan="6"
-                      style={emptyCellStyle}
-                    >
-                      No students found.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredStudents.map(
-                    (student) => (
-                      <tr
-                        key={student.id}
-                      >
-                        <td style={tdStyle}>
-                          <div
-                            style={
-                              studentNameStyle
-                            }
-                          >
-                            {[
-                              student.first_name,
-                              student.middle_name,
-                              student.last_name,
-                            ]
-                              .filter(Boolean)
-                              .join(" ") ||
-                              student.name ||
-                              student.student_name ||
-                              "N/A"}
-                          </div>
+                {filteredStudents.map((s) => {
+                  const currentSt = attendance[s.id] || "";
+                  const fullName = [s.first_name, s.middle_name, s.last_name].filter(Boolean).join(" ");
 
-                          <div
-                            style={
-                              studentSubStyle
-                            }
-                          >
-                            Student ID:{" "}
-                            {student.id}
-                          </div>
-                        </td>
+                  return (
+                    <tr key={s.id}>
+                      <td style={{ fontWeight: 600, color: "var(--text-bright)", fontSize: "14px" }}>
+                        {fullName || `Student #${s.id}`}
+                      </td>
+                      <td style={{ fontFamily: "var(--font-mono)", fontSize: "13px", color: "var(--accent-cyan)" }}>
+                        {s.admission_number || "—"}
+                      </td>
+                      <td style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+                        {s.class_name ? `Class ${s.class_name}` : "—"} {s.section ? `(${s.section})` : ""}
+                      </td>
+                      <td>
+                        <div style={{ display: "inline-flex", gap: "6px" }}>
+                          {STATUS_OPTIONS.map((st) => {
+                            const isSelected = currentSt === st;
+                            let activeBg = "rgba(99, 102, 241, 0.2)";
+                            let activeColor = "var(--accent-indigo-light)";
+                            let activeBorder = "var(--accent-indigo)";
 
-                        <td style={tdStyle}>
-                          {student.admission_number ||
-                            "—"}
-                        </td>
+                            if (st === "PRESENT") {
+                              activeBg = "rgba(16, 185, 129, 0.25)";
+                              activeColor = "#34d399";
+                              activeBorder = "#10b981";
+                            } else if (st === "ABSENT") {
+                              activeBg = "rgba(239, 68, 68, 0.25)";
+                              activeColor = "#f87171";
+                              activeBorder = "#ef4444";
+                            } else if (st === "LATE") {
+                              activeBg = "rgba(245, 158, 11, 0.25)";
+                              activeColor = "#fbbf24";
+                              activeBorder = "#f59e0b";
+                            } else if (st === "LEAVE") {
+                              activeBg = "rgba(168, 85, 247, 0.25)";
+                              activeColor = "#c084fc";
+                              activeBorder = "#a855f7";
+                            }
 
-                        <td style={tdStyle}>
-                          {student.class_name ||
-                            "—"}
-
-                          {student.section
-                            ? ` - ${student.section}`
-                            : ""}
-                        </td>
-
-                        <td style={tdStyle}>
-                          <div
-                            style={
-                              statusGroupStyle
-                            }
-                          >
-                            {STATUS_OPTIONS.map(
-                              (status) => (
-                                <button
-                                  key={status}
-                                  onClick={() =>
-                                    setStudentStatus(
-                                      student.id,
-                                      status
-                                    )
-                                  }
-                                  style={{
-                                    ...statusButtonStyle,
-                                    ...(attendance[
-                                      student.id
-                                    ] ===
-                                    status
-                                      ? getStatusActiveStyle(
-                                          status
-                                        )
-                                      : {}),
-                                  }}
-                                >
-                                  {status}
-                                </button>
-                              )
-                            )}
-                          </div>
-                        </td>
-
-                        <td style={tdStyle}>
-                          <input
-                            type="text"
-                            value={
-                              remarks[
-                                student.id
-                              ] || ""
-                            }
-                            onChange={(event) =>
-                              setStudentRemarks(
-                                student.id,
-                                event.target.value
-                              )
-                            }
-                            placeholder="Optional"
-                            style={
-                              remarksInputStyle
-                            }
-                          />
-                        </td>
-
-                        <td style={tdStyle}>
-                          <button
-                            onClick={() =>
-                              openHistory(
-                                student
-                              )
-                            }
-                            style={
-                              historyButtonStyle
-                            }
-                          >
-                            View
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  )
-                )}
+                            return (
+                              <button
+                                key={st}
+                                type="button"
+                                onClick={() => setStudentStatus(s.id, st)}
+                                style={{
+                                  padding: "5px 10px",
+                                  borderRadius: "6px",
+                                  fontSize: "11px",
+                                  fontWeight: 700,
+                                  cursor: "pointer",
+                                  transition: "all 0.12s ease",
+                                  border: isSelected ? `1px solid ${activeBorder}` : "1px solid var(--border-default)",
+                                  background: isSelected ? activeBg : "rgba(255, 255, 255, 0.03)",
+                                  color: isSelected ? activeColor : "var(--text-muted)",
+                                }}
+                              >
+                                {st}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Optional notes..."
+                          value={remarks[s.id] || ""}
+                          onChange={(e) => setStudentRemarks(s.id, e.target.value)}
+                          className="input-field"
+                          style={{ height: "34px", fontSize: "12.5px", maxWidth: "220px" }}
+                        />
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        <button
+                          type="button"
+                          onClick={() => openHistory(s)}
+                          className="btn btn-secondary"
+                          style={{ padding: "5px 10px", fontSize: "12px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                        >
+                          <History size={13} />
+                          Log
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-
-          <div style={footerActionStyle}>
-            <span style={footerTextStyle}>
-              {summary.unmarked} students
-              remain unmarked.
-            </span>
-
-            <button
-              onClick={saveAttendance}
-              disabled={saving}
-              style={primaryButtonStyle}
-            >
-              {saving
-                ? "Saving..."
-                : "Save Attendance"}
-            </button>
-          </div>
-        </section>
+        )}
       </div>
 
+      {/* STUDENT HISTORY TIMELINE MODAL */}
       {historyStudent && (
-        <div style={modalOverlayStyle}>
-          <div style={modalStyle}>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              width: "100%",
+              maxWidth: "600px",
+              maxHeight: "85vh",
+              overflowY: "auto",
+              padding: 0,
+              boxShadow: "0 25px 60px rgba(0, 0, 0, 0.7)",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
+            }}
+          >
             <div
-              style={modalHeaderStyle}
+              style={{
+                padding: "20px 24px",
+                borderBottom: "1px solid var(--border-default)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
             >
               <div>
-                <h2
-                  style={
-                    modalTitleStyle
-                  }
-                >
-                  {[
-                    historyStudent.first_name,
-                    historyStudent.middle_name,
-                    historyStudent.last_name,
-                  ]
-                    .filter(Boolean)
-                    .join(" ") ||
-                    historyStudent.name ||
-                    historyStudent.student_name ||
-                    "Student"}
-                </h2>
-
-                <p
-                  style={
-                    modalSubtitleStyle
-                  }
-                >
-                  Attendance history
+                <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 700, color: "var(--text-bright)" }}>
+                  Attendance History
+                </h3>
+                <p style={{ margin: "4px 0 0", fontSize: "12.5px", color: "var(--text-secondary)" }}>
+                  {historyStudent.first_name} {historyStudent.last_name} · Admission #{historyStudent.admission_number || "—"}
                 </p>
               </div>
-
               <button
-                onClick={closeHistory}
-                style={closeButtonStyle}
+                onClick={() => setHistoryStudent(null)}
+                style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
               >
-                ×
+                <X size={18} />
               </button>
             </div>
 
-            {historyLoading ||
-            !historyStudent.history ? (
-              <div style={modalLoadingStyle}>
-                Loading history...
-              </div>
-            ) : (
-              <>
-                <div
-                  style={
-                    historySummaryGridStyle
-                  }
-                >
-                  <HistoryStat
-                    label="Attendance"
-                    value={`${historyStudent.history.attendance_percentage ?? 0}%`}
-                  />
-
-                  <HistoryStat
-                    label="Present"
-                    value={
-                      historyStudent.history
-                        .present ?? 0
-                    }
-                  />
-
-                  <HistoryStat
-                    label="Absent"
-                    value={
-                      historyStudent.history
-                        .absent ?? 0
-                    }
-                  />
-
-                  <HistoryStat
-                    label="Late"
-                    value={
-                      historyStudent.history
-                        .late ?? 0
-                    }
-                  />
-
-                  <HistoryStat
-                    label="Leave"
-                    value={
-                      historyStudent.history
-                        .leave ?? 0
-                    }
-                  />
+            <div style={{ padding: "24px" }}>
+              {historyLoading ? (
+                <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}>
+                  Loading timeline...
                 </div>
-
-                <div
-                  style={
-                    historyTableWrapperStyle
-                  }
-                >
-                  <table
-                    style={tableStyle}
-                  >
+              ) : !historyStudent.history?.records?.length ? (
+                <div style={{ padding: "30px", textAlign: "center", color: "var(--text-muted)", fontSize: "13.5px" }}>
+                  No historical attendance log recorded for this student.
+                </div>
+              ) : (
+                <div style={{ overflowX: "auto" }}>
+                  <table className="dark-table">
                     <thead>
                       <tr>
-                        <th
-                          style={thStyle}
-                        >
-                          Date
-                        </th>
-
-                        <th
-                          style={thStyle}
-                        >
-                          Status
-                        </th>
-
-                        <th
-                          style={thStyle}
-                        >
-                          Remarks
-                        </th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Remarks</th>
                       </tr>
                     </thead>
-
                     <tbody>
-                      {!Array.isArray(
-                        historyStudent
-                          .history
-                          .records
-                      ) ||
-                      historyStudent.history
-                        .records.length ===
-                        0 ? (
-                        <tr>
-                          <td
-                            colSpan="3"
-                            style={
-                              emptyCellStyle
-                            }
-                          >
-                            No attendance
-                            history yet.
+                      {historyStudent.history.records.map((r, i) => (
+                        <tr key={i}>
+                          <td style={{ fontSize: "13px", color: "var(--text-bright)" }}>
+                            {r.attendance_date || r.date || "—"}
+                          </td>
+                          <td>
+                            <span
+                              className={`badge ${
+                                r.status === "PRESENT"
+                                  ? "badge-success"
+                                  : r.status === "ABSENT"
+                                  ? "badge-danger"
+                                  : "badge-warning"
+                              }`}
+                            >
+                              {r.status}
+                            </span>
+                          </td>
+                          <td style={{ fontSize: "12.5px", color: "var(--text-muted)" }}>
+                            {r.remarks || "—"}
                           </td>
                         </tr>
-                      ) : (
-                        historyStudent.history.records.map(
-                          (
-                            record,
-                            index
-                          ) => (
-                            <tr
-                              key={
-                                record.id ??
-                                `${record.date}-${index}`
-                              }
-                            >
-                              <td
-                                style={
-                                  tdStyle
-                                }
-                              >
-                                {record.date ||
-                                  record.attendance_date ||
-                                  "—"}
-                              </td>
-
-                              <td
-                                style={
-                                  tdStyle
-                                }
-                              >
-                                <span
-                                  style={getHistoryStatusStyle(
-                                    record.status
-                                  )}
-                                >
-                                  {
-                                    record.status
-                                  }
-                                </span>
-                              </td>
-
-                              <td
-                                style={
-                                  tdStyle
-                                }
-                              >
-                                {record.remarks ||
-                                  "—"}
-                              </td>
-                            </tr>
-                          )
-                        )
-                      )}
+                      ))}
                     </tbody>
                   </table>
                 </div>
-              </>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}
-    </div>
+    </AppLayout>
   );
 }
-
-function SummaryCard({
-  title,
-  value,
-  description,
-}) {
-  return (
-    <div style={summaryCardStyle}>
-      <div style={summaryTitleStyle}>
-        {title}
-      </div>
-
-      <div style={summaryValueStyle}>
-        {value}
-      </div>
-
-      <div
-        style={
-          summaryDescriptionStyle
-        }
-      >
-        {description}
-      </div>
-    </div>
-  );
-}
-
-function HistoryStat({
-  label,
-  value,
-}) {
-  return (
-    <div style={historyStatStyle}>
-      <div
-        style={
-          historyStatLabelStyle
-        }
-      >
-        {label}
-      </div>
-
-      <div
-        style={
-          historyStatValueStyle
-        }
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function getStatusActiveStyle(
-  status
-) {
-  if (status === "PRESENT") {
-    return {
-      background: "#dcfce7",
-      color: "#166534",
-      borderColor: "#86efac",
-    };
-  }
-
-  if (status === "ABSENT") {
-    return {
-      background: "#fee2e2",
-      color: "#991b1b",
-      borderColor: "#fca5a5",
-    };
-  }
-
-  if (status === "LATE") {
-    return {
-      background: "#fef3c7",
-      color: "#92400e",
-      borderColor: "#fcd34d",
-    };
-  }
-
-  return {
-    background: "#e0e7ff",
-    color: "#3730a3",
-    borderColor: "#a5b4fc",
-  };
-}
-
-function getHistoryStatusStyle(
-  status
-) {
-  return {
-    display: "inline-block",
-    padding: "5px 9px",
-    borderRadius: "999px",
-    fontSize: "11px",
-    fontWeight: 700,
-    ...getStatusActiveStyle(status),
-  };
-}
-
-const pageStyle = {
-  minHeight: "100vh",
-  background: "#f1f5f9",
-  padding: "32px",
-  fontFamily:
-    'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif',
-};
-
-const contentStyle = {
-  maxWidth: "1500px",
-  margin: "0 auto",
-};
-
-const topBarStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "flex-start",
-  gap: "24px",
-  flexWrap: "wrap",
-  marginBottom: "26px",
-};
-
-const backButtonStyle = {
-  border: "none",
-  background: "transparent",
-  color: "#475569",
-  cursor: "pointer",
-  padding: 0,
-  fontSize: "14px",
-  fontWeight: 600,
-};
-
-const eyebrowStyle = {
-  marginTop: "4px",
-  color: "#64748b",
-  fontSize: "13px",
-  fontWeight: 700,
-  letterSpacing: "0.08em",
-};
-
-const titleStyle = {
-  margin: "6px 0 0",
-  color: "#0f172a",
-  fontSize: "32px",
-  fontWeight: 800,
-};
-
-const subtitleStyle = {
-  margin: "7px 0 0",
-  color: "#64748b",
-};
-
-const dateBoxStyle = {
-  background: "#ffffff",
-  border: "1px solid #e2e8f0",
-  borderRadius: "12px",
-  padding: "16px",
-  minWidth: "220px",
-};
-
-const labelStyle = {
-  display: "block",
-  color: "#64748b",
-  fontSize: "12px",
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
-  marginBottom: "7px",
-};
-
-const dateInputStyle = {
-  width: "100%",
-  boxSizing: "border-box",
-  border: "1px solid #cbd5e1",
-  borderRadius: "8px",
-  padding: "10px",
-  fontSize: "14px",
-};
-
-const summaryGridStyle = {
-  display: "grid",
-  gridTemplateColumns:
-    "repeat(auto-fit, minmax(160px, 1fr))",
-  gap: "14px",
-  marginBottom: "22px",
-};
-
-const summaryCardStyle = {
-  background: "#ffffff",
-  border: "1px solid #e2e8f0",
-  borderRadius: "12px",
-  padding: "18px",
-};
-
-const summaryTitleStyle = {
-  color: "#64748b",
-  fontSize: "13px",
-  fontWeight: 700,
-};
-
-const summaryValueStyle = {
-  marginTop: "8px",
-  color: "#0f172a",
-  fontSize: "28px",
-  fontWeight: 800,
-};
-
-const summaryDescriptionStyle = {
-  marginTop: "3px",
-  color: "#94a3b8",
-  fontSize: "12px",
-};
-
-const sectionStyle = {
-  background: "#ffffff",
-  border: "1px solid #e2e8f0",
-  borderRadius: "16px",
-  padding: "24px",
-  boxShadow:
-    "0 4px 12px rgba(15, 23, 42, 0.04)",
-};
-
-const sectionHeaderStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "flex-start",
-  gap: "20px",
-  flexWrap: "wrap",
-  marginBottom: "22px",
-};
-
-const sectionTitleStyle = {
-  margin: 0,
-  color: "#0f172a",
-  fontSize: "20px",
-};
-
-const sectionDescriptionStyle = {
-  margin: "6px 0 0",
-  color: "#64748b",
-  fontSize: "14px",
-};
-
-const actionGroupStyle = {
-  display: "flex",
-  gap: "8px",
-  flexWrap: "wrap",
-};
-
-const primaryButtonStyle = {
-  border: "none",
-  background: "#2563eb",
-  color: "#ffffff",
-  borderRadius: "8px",
-  padding: "10px 15px",
-  cursor: "pointer",
-  fontWeight: 700,
-};
-
-const secondaryButtonStyle = {
-  border: "1px solid #cbd5e1",
-  background: "#ffffff",
-  color: "#334155",
-  borderRadius: "8px",
-  padding: "10px 13px",
-  cursor: "pointer",
-  fontWeight: 600,
-};
-
-const filterGridStyle = {
-  display: "grid",
-  gridTemplateColumns:
-    "repeat(auto-fit, minmax(200px, 1fr))",
-  gap: "14px",
-  marginBottom: "22px",
-};
-
-const inputStyle = {
-  width: "100%",
-  boxSizing: "border-box",
-  border: "1px solid #cbd5e1",
-  borderRadius: "8px",
-  padding: "10px 11px",
-  fontSize: "14px",
-  background: "#ffffff",
-};
-
-const tableWrapperStyle = {
-  overflowX: "auto",
-  border: "1px solid #e2e8f0",
-  borderRadius: "10px",
-};
-
-const tableStyle = {
-  width: "100%",
-  borderCollapse: "collapse",
-  minWidth: "1050px",
-};
-
-const thStyle = {
-  textAlign: "left",
-  padding: "13px 14px",
-  background: "#f8fafc",
-  color: "#64748b",
-  fontSize: "12px",
-  textTransform: "uppercase",
-  letterSpacing: "0.04em",
-  borderBottom:
-    "1px solid #e2e8f0",
-};
-
-const tdStyle = {
-  padding: "14px",
-  borderBottom:
-    "1px solid #eef2f7",
-  color: "#334155",
-  fontSize: "14px",
-  verticalAlign: "middle",
-};
-
-const studentNameStyle = {
-  color: "#0f172a",
-  fontWeight: 700,
-};
-
-const studentSubStyle = {
-  marginTop: "4px",
-  color: "#94a3b8",
-  fontSize: "12px",
-};
-
-const statusGroupStyle = {
-  display: "flex",
-  gap: "5px",
-  flexWrap: "wrap",
-};
-
-const statusButtonStyle = {
-  border: "1px solid #cbd5e1",
-  background: "#ffffff",
-  color: "#64748b",
-  borderRadius: "6px",
-  padding: "6px 8px",
-  cursor: "pointer",
-  fontSize: "11px",
-  fontWeight: 700,
-};
-
-const remarksInputStyle = {
-  width: "150px",
-  border: "1px solid #cbd5e1",
-  borderRadius: "7px",
-  padding: "8px",
-  fontSize: "13px",
-};
-
-const historyButtonStyle = {
-  border: "1px solid #bfdbfe",
-  background: "#eff6ff",
-  color: "#1d4ed8",
-  borderRadius: "7px",
-  padding: "7px 11px",
-  cursor: "pointer",
-  fontWeight: 700,
-};
-
-const emptyCellStyle = {
-  padding: "40px",
-  textAlign: "center",
-  color: "#64748b",
-};
-
-const footerActionStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-  gap: "16px",
-  marginTop: "18px",
-  flexWrap: "wrap",
-};
-
-const footerTextStyle = {
-  color: "#64748b",
-  fontSize: "13px",
-};
-
-const successStyle = {
-  marginBottom: "18px",
-  background: "#f0fdf4",
-  border: "1px solid #bbf7d0",
-  color: "#166534",
-  padding: "13px 16px",
-  borderRadius: "10px",
-};
-
-const errorStyle = {
-  marginBottom: "18px",
-  background: "#fef2f2",
-  border: "1px solid #fecaca",
-  color: "#991b1b",
-  padding: "13px 16px",
-  borderRadius: "10px",
-};
-
-const centerStyle = {
-  minHeight: "70vh",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  color: "#64748b",
-};
-
-const modalOverlayStyle = {
-  position: "fixed",
-  inset: 0,
-  background:
-    "rgba(15, 23, 42, 0.55)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "20px",
-  zIndex: 1000,
-};
-
-const modalStyle = {
-  width: "min(900px, 100%)",
-  maxHeight: "90vh",
-  overflowY: "auto",
-  background: "#ffffff",
-  borderRadius: "16px",
-  padding: "24px",
-  boxShadow:
-    "0 20px 50px rgba(15, 23, 42, 0.25)",
-};
-
-const modalHeaderStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: "20px",
-  marginBottom: "20px",
-};
-
-const modalTitleStyle = {
-  margin: 0,
-  color: "#0f172a",
-};
-
-const modalSubtitleStyle = {
-  margin: "5px 0 0",
-  color: "#64748b",
-};
-
-const closeButtonStyle = {
-  border: "none",
-  background: "#f1f5f9",
-  width: "34px",
-  height: "34px",
-  borderRadius: "50%",
-  fontSize: "22px",
-  cursor: "pointer",
-  color: "#475569",
-};
-
-const historySummaryGridStyle = {
-  display: "grid",
-  gridTemplateColumns:
-    "repeat(auto-fit, minmax(120px, 1fr))",
-  gap: "10px",
-  marginBottom: "20px",
-};
-
-const historyStatStyle = {
-  background: "#f8fafc",
-  border: "1px solid #e2e8f0",
-  borderRadius: "10px",
-  padding: "14px",
-};
-
-const historyStatLabelStyle = {
-  color: "#64748b",
-  fontSize: "11px",
-  fontWeight: 700,
-  textTransform: "uppercase",
-};
-
-const historyStatValueStyle = {
-  marginTop: "5px",
-  color: "#0f172a",
-  fontSize: "20px",
-  fontWeight: 800,
-};
-
-const historyTableWrapperStyle = {
-  overflowX: "auto",
-  border: "1px solid #e2e8f0",
-  borderRadius: "10px",
-};
-
-const modalLoadingStyle = {
-  padding: "50px",
-  textAlign: "center",
-  color: "#64748b",
-};
-
-export default Attendance;

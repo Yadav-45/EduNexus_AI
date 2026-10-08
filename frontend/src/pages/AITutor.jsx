@@ -1,35 +1,51 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import AppLayout from "../components/AppLayout";
 import { API_BASE_URL } from "../api/config";
+import {
+  Sparkles,
+  Send,
+  Trash2,
+  Copy,
+  Check,
+  Bot,
+  User,
+  Zap,
+  Code2,
+  Lightbulb,
+  BookOpen,
+  ArrowRight
+} from "lucide-react";
 
 const STORAGE_KEY = "edunexus_ai_tutor_messages";
 
-function AITutor() {
-  const navigate = useNavigate();
-  const messagesEndRef = useRef(null);
+const SUGGESTED_PROMPTS = [
+  "Explain Python loops with a simple example",
+  "What is the difference between a list and a tuple in Python?",
+  "How does recursion work with a factorial function?",
+  "Write a Python script to calculate average student grades",
+  "Explain Big O notation and algorithm time complexity",
+];
 
+export default function AITutor() {
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
   const [question, setQuestion] = useState("");
+  const [copiedIndex, setCopiedIndex] = useState(null);
 
   const [messages, setMessages] = useState(() => {
-    const savedMessages =
-      localStorage.getItem(STORAGE_KEY);
-
-    if (savedMessages) {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
       try {
-        return JSON.parse(savedMessages);
-      } catch (error) {
-        console.error(
-          "Failed to load saved chat:",
-          error
-        );
+        return JSON.parse(saved);
+      } catch (err) {
+        console.error("Failed to load saved chat history:", err);
       }
     }
-
     return [
       {
         role: "ai",
-        text:
-          "Hello! 👋 I'm your EduNexus AI Tutor. I'm ready to help you with Python and your course.",
+        text: "Greetings! 👋 I am your EduNexus AI Neural Tutor. Ask me any conceptual question, request code walkthroughs, or debug Python programming assignments.",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       },
     ];
   });
@@ -37,1301 +53,438 @@ function AITutor() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(messages)
-    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
   }, [messages]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-    });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  const askQuestion = async () => {
-    const trimmedQuestion =
-      question.trim();
+  const askQuestion = async (overrideText) => {
+    const promptText = (overrideText || question).trim();
+    if (!promptText || loading) return;
 
-    if (!trimmedQuestion || loading) {
-      return;
-    }
+    const userMsg = {
+      role: "user",
+      text: promptText,
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
 
-    setMessages((previous) => [
-      ...previous,
-      {
-        role: "user",
-        text: trimmedQuestion,
-      },
-    ]);
-
+    setMessages((prev) => [...prev, userMsg]);
     setQuestion("");
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/ai-tutor`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            question: trimmedQuestion,
-            course: "Python Programming",
-          }),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/ai-tutor`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          question: promptText,
+          course: "Python Programming",
+        }),
+      });
 
       if (!response.ok) {
-        throw new Error(
-          "Failed to contact AI Tutor"
-        );
+        throw new Error(`AI Gateway responded with status ${response.status}`);
       }
 
       const data = await response.json();
+      const aiReply = data?.answer || "No response received from the neural engine.";
 
-      setMessages((previous) => [
-        ...previous,
+      setMessages((prev) => [
+        ...prev,
         {
           role: "ai",
-          text: data.answer,
+          text: aiReply,
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         },
       ]);
-    } catch (error) {
-      console.error(
-        "AI Tutor error:",
-        error
-      );
-
-      setMessages((previous) => [
-        ...previous,
+    } catch (err) {
+      console.error("AI Tutor response error:", err);
+      setMessages((prev) => [
+        ...prev,
         {
           role: "ai",
-          text:
-            "Sorry, I couldn't connect to the AI Tutor right now.",
+          text: "⚠️ Neural connection timeout: Unable to reach the EduNexus AI service. Please verify your connection or try again shortly.",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          isError: true,
         },
       ]);
     } finally {
       setLoading(false);
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   };
 
   const clearChat = () => {
-    const confirmed =
-      window.confirm(
-        "Are you sure you want to clear your AI Tutor chat?"
-      );
-
-    if (!confirmed) {
-      return;
-    }
-
-    const welcomeMessage = [
+    if (!window.confirm("Are you sure you want to reset your neural chat history?")) return;
+    const initial = [
       {
         role: "ai",
-        text:
-          "Hello! 👋 I'm your EduNexus AI Tutor. I'm ready to help you with Python and your course.",
+        text: "Neural workspace reset. How can I assist your learning today?",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       },
     ];
-
-    setMessages(welcomeMessage);
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(welcomeMessage)
-    );
+    setMessages(initial);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
   };
 
-  const handleKeyDown = (event) => {
-    if (
-      event.key === "Enter" &&
-      !event.shiftKey
-    ) {
-      event.preventDefault();
+  const handleCopy = (text, index) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(index);
+    setTimeout(() => setCopiedIndex(null), 1800);
+  };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
       askQuestion();
     }
   };
 
   return (
-    <div className="ai-tutor-page">
-
-      <style>{`
-
-        * {
-          box-sizing: border-box;
-        }
-
-        body {
-          margin: 0;
-          background: #ffffff;
-        }
-
-        button,
-        textarea {
-          font-family: inherit;
-        }
-
-        .ai-tutor-page {
-          min-height: 100vh;
-
-          background:
-            linear-gradient(
-              180deg,
-              #ffffff 0%,
-              #f8fafc 100%
-            );
-
-          color: #172033;
-
-          font-family:
-            Inter,
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
-            Arial,
-            sans-serif;
-
-          display: flex;
-
-          flex-direction: column;
-        }
-
-        /* =========================
-           HEADER
-        ========================= */
-
-        .ai-header {
-          height: 72px;
-
-          flex-shrink: 0;
-
-          background: #ffffff;
-
-          border-bottom:
-            1px solid #e7ebf0;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: space-between;
-
-          padding:
-            0 42px;
-
-          position: sticky;
-
-          top: 0;
-
-          z-index: 30;
-        }
-
-        .ai-brand {
-          display: flex;
-
-          align-items: center;
-
-          gap: 10px;
-
-          cursor: pointer;
-        }
-
-        .brand-mark {
-          width: 36px;
-          height: 36px;
-
-          border-radius: 9px;
-
-          background:
-            linear-gradient(
-              135deg,
-              #2563eb,
-              #4f46e5
-            );
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          color: white;
-
-          font-size: 16px;
-
-          font-weight: 800;
-
-          box-shadow:
-            0 5px 12px
-            rgba(37, 99, 235, 0.16);
-        }
-
-        .brand-name {
-          color: #101828;
-
-          font-size: 16px;
-
-          font-weight: 800;
-
-          letter-spacing: -0.4px;
-        }
-
-        .brand-name span {
-          color: #2563eb;
-        }
-
-        .brand-caption {
-          color: #98a2b3;
-
-          font-size: 7px;
-
-          letter-spacing: 0.6px;
-
-          margin-top: 2px;
-        }
-
-        .header-actions {
-          display: flex;
-
-          align-items: center;
-
-          gap: 9px;
-        }
-
-        .header-button {
-          padding:
-            9px 14px;
-
-          border:
-            1px solid #dfe5ec;
-
-          border-radius: 8px;
-
-          background: #ffffff;
-
-          color: #475467;
-
-          font-size: 10px;
-
-          font-weight: 700;
-
-          cursor: pointer;
-
-          transition: 0.18s;
-        }
-
-        .header-button:hover {
-          color: #2563eb;
-
-          border-color: #bfd3f2;
-
-          background: #f8fbff;
-        }
-
-        .clear-button {
-          color: #dc2626;
-
-          border-color: #fecaca;
-
-          background: #fffafa;
-        }
-
-        .clear-button:hover {
-          color: #b91c1c;
-
-          border-color: #fca5a5;
-
-          background: #fff5f5;
-        }
-
-        /* =========================
-           MAIN
-        ========================= */
-
-        .ai-main {
-          width: 100%;
-
-          max-width: 1180px;
-
-          margin: 0 auto;
-
-          padding:
-            30px 42px 42px;
-
-          flex: 1;
-
-          display: flex;
-
-          flex-direction: column;
-        }
-
-        .breadcrumb {
-          display: flex;
-
-          align-items: center;
-
-          gap: 7px;
-
-          margin-bottom: 16px;
-
-          color: #98a2b3;
-
-          font-size: 9px;
-
-          font-weight: 600;
-        }
-
-        .breadcrumb button {
-          padding: 0;
-
-          border: none;
-
-          background: transparent;
-
-          color: #667085;
-
-          font-size: 9px;
-
-          font-weight: 700;
-
-          cursor: pointer;
-        }
-
-        .breadcrumb button:hover {
-          color: #2563eb;
-        }
-
-        .breadcrumb-arrow {
-          color: #d0d5dd;
-        }
-
-        /* =========================
-           AI WORKSPACE
-        ========================= */
-
-        .ai-workspace {
-          background: #ffffff;
-
-          border:
-            1px solid #dfe6ef;
-
-          border-radius: 17px;
-
-          overflow: hidden;
-
-          box-shadow:
-            0 7px 28px
-            rgba(16, 24, 40, 0.055);
-
-          display: flex;
-
-          flex-direction: column;
-
-          flex: 1;
-
-          min-height: 650px;
-        }
-
-        /* =========================
-           AI HERO
-        ========================= */
-
-        .ai-hero {
-          padding:
-            24px 27px;
-
-          background:
-            linear-gradient(
-              135deg,
-              #f5f9ff,
-              #eef3fb
-            );
-
-          border-bottom:
-            1px solid #e1e7ef;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: space-between;
-
-          gap: 20px;
-        }
-
-        .ai-hero-left {
-          display: flex;
-
-          align-items: center;
-
-          gap: 14px;
-        }
-
-        .ai-avatar {
-          width: 52px;
-          height: 52px;
-
-          flex-shrink: 0;
-
-          border-radius: 14px;
-
-          background:
-            linear-gradient(
-              135deg,
-              #2563eb,
-              #4f46e5
-            );
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          color: white;
-
-          font-size: 23px;
-
-          box-shadow:
-            0 7px 15px
-            rgba(37, 99, 235, 0.18);
-        }
-
-        .ai-hero-title {
-          margin: 0;
-
-          color: #101828;
-
-          font-size: 19px;
-
-          font-weight: 800;
-
-          letter-spacing: -0.3px;
-        }
-
-        .ai-hero-description {
-          margin:
-            5px 0 0;
-
-          color: #667085;
-
-          font-size: 9px;
-
-          line-height: 1.5;
-        }
-
-        .course-pill {
-          display: flex;
-
-          align-items: center;
-
-          gap: 7px;
-
-          padding:
-            8px 12px;
-
-          border:
-            1px solid #d6e1ef;
-
-          border-radius: 20px;
-
-          background: #ffffff;
-
-          color: #475467;
-
-          font-size: 8px;
-
-          font-weight: 750;
-
-          white-space: nowrap;
-        }
-
-        .course-pill-icon {
-          color: #2563eb;
-
-          font-size: 11px;
-        }
-
-        /* =========================
-           CHAT
-        ========================= */
-
-        .chat-area {
-          flex: 1;
-
-          min-height: 440px;
-
-          max-height: 580px;
-
-          overflow-y: auto;
-
-          padding:
-            25px 27px;
-
-          background:
-            #ffffff;
-        }
-
-        .message-row {
-          display: flex;
-
-          width: 100%;
-
-          margin-bottom: 18px;
-        }
-
-        .message-row.user {
-          justify-content: flex-end;
-        }
-
-        .message-row.ai {
-          justify-content: flex-start;
-        }
-
-        .message-wrapper {
-          display: flex;
-
-          align-items: flex-end;
-
-          gap: 8px;
-
-          max-width: 78%;
-        }
-
-        .message-row.user
-          .message-wrapper {
-          flex-direction: row-reverse;
-        }
-
-        .message-avatar {
-          width: 27px;
-          height: 27px;
-
-          flex-shrink: 0;
-
-          border-radius: 8px;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          font-size: 11px;
-
-          font-weight: 800;
-        }
-
-        .message-avatar.ai {
-          background: #eef4ff;
-
-          color: #2563eb;
-
-          border:
-            1px solid #dbe7f8;
-        }
-
-        .message-avatar.user {
-          background: #e8eef8;
-
-          color: #475467;
-
-          border:
-            1px solid #d8e0eb;
-        }
-
-        .message-bubble {
-          padding:
-            11px 14px;
-
-          border-radius: 13px;
-
-          font-size: 9px;
-
-          line-height: 1.7;
-
-          white-space: pre-wrap;
-
-          word-break: break-word;
-        }
-
-        .message-bubble.ai {
-          background: #f4f6f9;
-
-          border:
-            1px solid #e8ebef;
-
-          color: #344054;
-
-          border-bottom-left-radius: 4px;
-        }
-
-        .message-bubble.user {
-          background:
-            linear-gradient(
-              135deg,
-              #2563eb,
-              #4f46e5
-            );
-
-          color: white;
-
-          border-bottom-right-radius: 4px;
-
-          box-shadow:
-            0 4px 10px
-            rgba(37, 99, 235, 0.12);
-        }
-
-        /* =========================
-           TYPING
-        ========================= */
-
-        .typing-wrapper {
-          display: flex;
-
-          align-items: flex-end;
-
-          gap: 8px;
-
-          margin-bottom: 18px;
-        }
-
-        .typing-bubble {
-          padding:
-            11px 14px;
-
-          border-radius:
-            13px 13px 13px 4px;
-
-          background: #f4f6f9;
-
-          border:
-            1px solid #e8ebef;
-
-          display: flex;
-
-          align-items: center;
-
-          gap: 4px;
-        }
-
-        .typing-dot {
-          width: 5px;
-          height: 5px;
-
-          border-radius: 50%;
-
-          background: #98a2b3;
-
-          animation:
-            typing 1.2s infinite ease-in-out;
-        }
-
-        .typing-dot:nth-child(2) {
-          animation-delay: 0.15s;
-        }
-
-        .typing-dot:nth-child(3) {
-          animation-delay: 0.3s;
-        }
-
-        @keyframes typing {
-          0%,
-          60%,
-          100% {
-            transform: translateY(0);
-
-            opacity: 0.45;
-          }
-
-          30% {
-            transform: translateY(-3px);
-
-            opacity: 1;
-          }
-        }
-
-        /* =========================
-           INPUT
-        ========================= */
-
-        .input-area {
-          padding:
-            15px 18px 17px;
-
-          border-top:
-            1px solid #e6eaf0;
-
-          background: #fbfcfe;
-        }
-
-        .input-box {
-          display: flex;
-
-          align-items: flex-end;
-
-          gap: 9px;
-
-          padding:
-            7px 7px 7px 12px;
-
-          border:
-            1px solid #d8e0e9;
-
-          border-radius: 11px;
-
-          background: #ffffff;
-
-          transition:
-            border-color 0.18s,
-            box-shadow 0.18s;
-        }
-
-        .input-box:focus-within {
-          border-color: #9bbcf0;
-
-          box-shadow:
-            0 0 0 3px
-            rgba(37, 99, 235, 0.06);
-        }
-
-        .question-input {
-          flex: 1;
-
-          min-height: 38px;
-
-          max-height: 120px;
-
-          resize: none;
-
-          border: none;
-
-          outline: none;
-
-          padding:
-            9px 2px;
-
-          background: transparent;
-
-          color: #172033;
-
-          font-size: 9px;
-
-          line-height: 1.5;
-        }
-
-        .question-input::placeholder {
-          color: #98a2b3;
-        }
-
-        .send-button {
-          width: 42px;
-          height: 38px;
-
-          flex-shrink: 0;
-
-          border: none;
-
-          border-radius: 8px;
-
-          background:
-            linear-gradient(
-              135deg,
-              #2563eb,
-              #4f46e5
-            );
-
-          color: white;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          font-size: 15px;
-
-          cursor: pointer;
-
-          box-shadow:
-            0 4px 10px
-            rgba(37, 99, 235, 0.15);
-
-          transition:
-            transform 0.18s,
-            opacity 0.18s;
-        }
-
-        .send-button:hover:not(:disabled) {
-          transform:
-            translateY(-1px);
-        }
-
-        .send-button:disabled {
-          background: #cbd5e1;
-
-          box-shadow: none;
-
-          cursor: default;
-
-          opacity: 0.8;
-        }
-
-        .input-hint {
-          margin:
-            7px 3px 0;
-
-          color: #98a2b3;
-
-          font-size: 7px;
-        }
-
-        /* =========================
-           EMPTY CHAT
-        ========================= */
-
-        .chat-empty {
-          min-height: 350px;
-
-          display: flex;
-
-          flex-direction: column;
-
-          align-items: center;
-
-          justify-content: center;
-
-          text-align: center;
-
-          color: #98a2b3;
-        }
-
-        .chat-empty-icon {
-          width: 52px;
-          height: 52px;
-
-          border-radius: 14px;
-
-          background: #f1f6fd;
-
-          display: flex;
-
-          align-items: center;
-
-          justify-content: center;
-
-          font-size: 22px;
-
-          margin-bottom: 12px;
-        }
-
-        .chat-empty-title {
-          margin: 0;
-
-          color: #344054;
-
-          font-size: 12px;
-
-          font-weight: 800;
-        }
-
-        .chat-empty-text {
-          margin:
-            5px 0 0;
-
-          font-size: 8px;
-        }
-
-        /* =========================
-           RESPONSIVE
-        ========================= */
-
-        @media (max-width: 700px) {
-
-          .ai-header {
-            padding:
-              0 18px;
-          }
-
-          .ai-main {
-            padding:
-              22px 18px 30px;
-          }
-
-          .ai-hero {
-            align-items: flex-start;
-
-            flex-direction: column;
-
-            padding: 20px;
-          }
-
-          .course-pill {
-            width: 100%;
-
-            justify-content: center;
-          }
-
-          .chat-area {
-            padding:
-              20px 15px;
-
-            min-height: 430px;
-          }
-
-          .message-wrapper {
-            max-width: 90%;
-          }
-
-          .brand-caption {
-            display: none;
-          }
-
-        }
-
-        @media (max-width: 500px) {
-
-          .ai-header {
-            height: 64px;
-          }
-
-          .brand-name {
-            font-size: 14px;
-          }
-
-          .header-button {
-            padding:
-              8px 10px;
-
-            font-size: 9px;
-          }
-
-          .clear-button {
-            display: none;
-          }
-
-          .ai-main {
-            padding:
-              18px 10px 20px;
-          }
-
-          .breadcrumb {
-            padding-left: 3px;
-          }
-
-          .ai-workspace {
-            border-radius: 13px;
-          }
-
-          .ai-hero-left {
-            align-items: flex-start;
-          }
-
-          .ai-avatar {
-            width: 44px;
-            height: 44px;
-
-            border-radius: 11px;
-
-            font-size: 19px;
-          }
-
-          .ai-hero-title {
-            font-size: 16px;
-          }
-
-          .chat-area {
-            min-height: 420px;
-          }
-
-          .message-wrapper {
-            max-width: 94%;
-          }
-
-          .message-bubble {
-            font-size: 9px;
-          }
-
-          .input-area {
-            padding:
-              12px;
-          }
-
-          .input-hint {
-            display: none;
-          }
-
-        }
-
-      `}</style>
-
-      {/* =========================
-          HEADER
-      ========================= */}
-
-      <header className="ai-header">
-
-        <div
-          className="ai-brand"
-          onClick={() =>
-            navigate("/dashboard")
-          }
+    <AppLayout
+      title="Neural AI Tutor"
+      subtitle="Autonomous generative tutor, code analyst, and interactive academic copilot."
+      actions={
+        <button
+          onClick={clearChat}
+          className="btn btn-secondary"
+          style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13px" }}
         >
-
-          <div className="brand-mark">
-            E
-          </div>
-
-          <div>
-
-            <div className="brand-name">
-              edu<span>nexus.ai</span>
+          <Trash2 size={15} />
+          Reset Chat
+        </button>
+      }
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          height: "calc(100vh - 170px)",
+          minHeight: "580px",
+          gap: "16px",
+        }}
+      >
+        {/* TOP STATUS RIBBON */}
+        <div
+          className="card"
+          style={{
+            padding: "14px 20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "12px",
+            background: "linear-gradient(90deg, rgba(99, 102, 241, 0.1) 0%, rgba(6, 182, 212, 0.08) 100%)",
+            border: "1px solid rgba(99, 102, 241, 0.25)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "8px",
+                background: "linear-gradient(135deg, var(--accent-indigo), var(--accent-cyan))",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#fff",
+              }}
+            >
+              <Zap size={18} />
             </div>
-
-            <div className="brand-caption">
-              AI LEARNING PLATFORM
-            </div>
-
-          </div>
-
-        </div>
-
-        <div className="header-actions">
-
-          <button
-            className="header-button"
-            onClick={() =>
-              navigate("/dashboard")
-            }
-          >
-            Dashboard
-          </button>
-
-          <button
-            className="header-button clear-button"
-            onClick={clearChat}
-          >
-            Clear Chat
-          </button>
-
-        </div>
-
-      </header>
-
-      {/* =========================
-          MAIN
-      ========================= */}
-
-      <main className="ai-main">
-
-        <div className="breadcrumb">
-
-          <button
-            onClick={() =>
-              navigate("/dashboard")
-            }
-          >
-            Dashboard
-          </button>
-
-          <span className="breadcrumb-arrow">
-            /
-          </span>
-
-          <span>
-            AI Tutor
-          </span>
-
-        </div>
-
-        <section className="ai-workspace">
-
-          {/* =====================
-              AI HERO
-          ===================== */}
-
-          <div className="ai-hero">
-
-            <div className="ai-hero-left">
-
-              <div className="ai-avatar">
-                🤖
+            <div>
+              <div style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--text-bright)" }}>
+                EduNexus Intelligence v2.4 (Python & Core Sciences)
               </div>
-
-              <div>
-
-                <h1 className="ai-hero-title">
-                  EduNexus AI Tutor
-                </h1>
-
-                <p className="ai-hero-description">
-                  Your personal assistant for
-                  learning Python.
-                </p>
-
+              <div style={{ fontSize: "11.5px", color: "var(--text-secondary)" }}>
+                Active context: Python Data Structures, Control Flow, and Object Orientation
               </div>
-
             </div>
-
-            <div className="course-pill">
-
-              <span className="course-pill-icon">
-                📚
-              </span>
-
-              Current Course:
-              &nbsp;Python Programming
-
-            </div>
-
           </div>
 
-          {/* =====================
-              CHAT
-          ===================== */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "4px 10px",
+                borderRadius: "999px",
+                fontSize: "11px",
+                fontWeight: 600,
+                background: "rgba(16, 185, 129, 0.12)",
+                color: "#34d399",
+                border: "1px solid rgba(16, 185, 129, 0.25)",
+              }}
+            >
+              <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#10b981" }} />
+              Engine Online
+            </span>
+          </div>
+        </div>
 
-          <div className="chat-area">
+        {/* CHAT MESSAGES SCROLL CONTAINER */}
+        <div
+          className="card"
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
+            background: "rgba(11, 15, 25, 0.75)",
+          }}
+        >
+          {messages.map((msg, index) => {
+            const isUser = msg.role === "user";
 
-            {messages.length === 0 && (
-
-              <div className="chat-empty">
-
-                <div className="chat-empty-icon">
-                  🤖
+            return (
+              <div
+                key={index}
+                style={{
+                  display: "flex",
+                  gap: "14px",
+                  alignSelf: isUser ? "flex-end" : "flex-start",
+                  maxWidth: isUser ? "80%" : "88%",
+                  flexDirection: isUser ? "row-reverse" : "row",
+                }}
+              >
+                {/* AVATAR */}
+                <div
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    borderRadius: "10px",
+                    flexShrink: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: isUser
+                      ? "linear-gradient(135deg, #4f46e5, #6366f1)"
+                      : "linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(99, 102, 241, 0.25))",
+                    border: isUser
+                      ? "1px solid rgba(99, 102, 241, 0.5)"
+                      : "1px solid rgba(6, 182, 212, 0.3)",
+                    color: isUser ? "#fff" : "var(--accent-cyan)",
+                  }}
+                >
+                  {isUser ? <User size={18} /> : <Bot size={18} />}
                 </div>
 
-                <h3 className="chat-empty-title">
-                  Start a conversation
-                </h3>
+                {/* BUBBLE */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: isUser ? "flex-end" : "flex-start" }}>
+                  <div
+                    style={{
+                      padding: "16px 20px",
+                      borderRadius: isUser ? "16px 4px 16px 16px" : "4px 16px 16px 16px",
+                      background: isUser
+                        ? "linear-gradient(135deg, #4338ca, #4f46e5)"
+                        : "var(--bg-surface)",
+                      color: isUser ? "#ffffff" : "var(--text-bright)",
+                      border: isUser
+                        ? "1px solid rgba(99, 102, 241, 0.4)"
+                        : "1px solid var(--border-default)",
+                      fontSize: "14px",
+                      lineHeight: 1.65,
+                      boxShadow: isUser
+                        ? "0 4px 16px rgba(79, 70, 229, 0.25)"
+                        : "0 2px 10px rgba(0, 0, 0, 0.2)",
+                      whiteSpace: "pre-wrap",
+                      position: "relative",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {msg.text}
 
-                <p className="chat-empty-text">
-                  Ask your AI Tutor anything
-                  about Python.
-                </p>
-
-              </div>
-
-            )}
-
-            {messages.map(
-              (message, index) => (
-
-                <div
-                  key={index}
-                  className={
-                    message.role === "user"
-                      ? "message-row user"
-                      : "message-row ai"
-                  }
-                >
-
-                  <div className="message-wrapper">
-
-                    <div
-                      className={
-                        message.role === "user"
-                          ? "message-avatar user"
-                          : "message-avatar ai"
-                      }
-                    >
-                      {message.role === "user"
-                        ? "You"
-                        : "AI"}
-                    </div>
-
-                    <div
-                      className={
-                        message.role === "user"
-                          ? "message-bubble user"
-                          : "message-bubble ai"
-                      }
-                    >
-                      {message.text}
-                    </div>
-
+                    {!isUser && (
+                      <button
+                        onClick={() => handleCopy(msg.text, index)}
+                        title="Copy Response"
+                        style={{
+                          position: "absolute",
+                          top: "10px",
+                          right: "10px",
+                          background: "rgba(255, 255, 255, 0.05)",
+                          border: "1px solid rgba(255, 255, 255, 0.1)",
+                          borderRadius: "6px",
+                          padding: "5px",
+                          color: "var(--text-muted)",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {copiedIndex === index ? <Check size={13} style={{ color: "var(--accent-emerald)" }} /> : <Copy size={13} />}
+                      </button>
+                    )}
                   </div>
 
+                  <span style={{ fontSize: "11px", color: "var(--text-muted)", padding: "0 4px" }}>
+                    {msg.timestamp || ""}
+                  </span>
                 </div>
-
-              )
-            )}
-
-            {loading && (
-
-              <div className="typing-wrapper">
-
-                <div className="message-avatar ai">
-                  AI
-                </div>
-
-                <div className="typing-bubble">
-
-                  <span className="typing-dot" />
-                  <span className="typing-dot" />
-                  <span className="typing-dot" />
-
-                </div>
-
               </div>
+            );
+          })}
 
-            )}
-
-            <div ref={messagesEndRef} />
-
-          </div>
-
-          {/* =====================
-              INPUT
-          ===================== */}
-
-          <div className="input-area">
-
-            <div className="input-box">
-
-              <textarea
-                className="question-input"
-                value={question}
-                onChange={(event) =>
-                  setQuestion(
-                    event.target.value
-                  )
-                }
-                onKeyDown={handleKeyDown}
-                placeholder="Ask about Python, lessons, loops, functions..."
-                rows={2}
-              />
-
-              <button
-                className="send-button"
-                onClick={askQuestion}
-                disabled={
-                  loading ||
-                  !question.trim()
-                }
-                aria-label="Send question"
+          {loading && (
+            <div style={{ display: "flex", gap: "14px", alignSelf: "flex-start" }}>
+              <div
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "10px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(99, 102, 241, 0.25))",
+                  border: "1px solid rgba(6, 182, 212, 0.3)",
+                  color: "var(--accent-cyan)",
+                }}
               >
-                {loading ? "…" : "➤"}
-              </button>
-
+                <Bot size={18} />
+              </div>
+              <div
+                style={{
+                  padding: "16px 20px",
+                  borderRadius: "4px 16px 16px 16px",
+                  background: "var(--bg-surface)",
+                  border: "1px solid var(--border-default)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <span
+                  style={{
+                    width: "7px",
+                    height: "7px",
+                    borderRadius: "50%",
+                    background: "var(--accent-indigo)",
+                    animation: "pulse 1.2s infinite ease-in-out",
+                  }}
+                />
+                <span
+                  style={{
+                    width: "7px",
+                    height: "7px",
+                    borderRadius: "50%",
+                    background: "var(--accent-cyan)",
+                    animation: "pulse 1.2s infinite ease-in-out 0.2s",
+                  }}
+                />
+                <span
+                  style={{
+                    width: "7px",
+                    height: "7px",
+                    borderRadius: "50%",
+                    background: "var(--accent-purple)",
+                    animation: "pulse 1.2s infinite ease-in-out 0.4s",
+                  }}
+                />
+                <span style={{ fontSize: "12.5px", color: "var(--text-muted)", marginLeft: "4px" }}>
+                  Synthesizing neural response...
+                </span>
+              </div>
             </div>
+          )}
 
-            <div className="input-hint">
-              Press Enter to send • Shift + Enter
-              for a new line
-            </div>
+          <div ref={messagesEndRef} />
+        </div>
 
-          </div>
+        {/* QUICK SUGGESTION PILLS */}
+        <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
+          {SUGGESTED_PROMPTS.map((prompt, i) => (
+            <button
+              key={i}
+              onClick={() => askQuestion(prompt)}
+              disabled={loading}
+              style={{
+                background: "rgba(255, 255, 255, 0.03)",
+                border: "1px solid var(--border-default)",
+                borderRadius: "999px",
+                padding: "7px 14px",
+                color: "var(--text-secondary)",
+                fontSize: "12px",
+                whiteSpace: "nowrap",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--accent-indigo)";
+                e.currentTarget.style.color = "var(--text-bright)";
+                e.currentTarget.style.background = "rgba(99, 102, 241, 0.1)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--border-default)";
+                e.currentTarget.style.color = "var(--text-secondary)";
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
+              }}
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
 
-        </section>
+        {/* INPUT COMPOSER */}
+        <div
+          className="card"
+          style={{
+            padding: "10px 14px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            background: "var(--bg-surface)",
+            border: "1px solid rgba(255, 255, 255, 0.15)",
+          }}
+        >
+          <textarea
+            ref={inputRef}
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask anything about Python, algorithmic logic, functions, assignments..."
+            rows={1}
+            style={{
+              flex: 1,
+              background: "transparent",
+              border: "none",
+              outline: "none",
+              color: "var(--text-bright)",
+              fontSize: "14px",
+              resize: "none",
+              fontFamily: "inherit",
+              padding: "6px 4px",
+              maxHeight: "100px",
+            }}
+          />
 
-      </main>
-
-    </div>
+          <button
+            onClick={() => askQuestion()}
+            disabled={loading || !question.trim()}
+            className="btn btn-primary"
+            style={{
+              padding: "10px 16px",
+              borderRadius: "10px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              opacity: loading || !question.trim() ? 0.5 : 1,
+            }}
+          >
+            <span>Ask</span>
+            <Send size={15} />
+          </button>
+        </div>
+      </div>
+    </AppLayout>
   );
 }
-
-export default AITutor;

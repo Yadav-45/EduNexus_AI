@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import { Sparkles, Shield, Lock, Mail, ArrowRight, CheckCircle2, Cpu } from "lucide-react";
 
 function Login() {
   const navigate = useNavigate();
@@ -12,10 +13,7 @@ function Login() {
 
   const getUserRoleFromToken = (token) => {
     try {
-      const payload = JSON.parse(
-        atob(token.split(".")[1])
-      );
-
+      const payload = JSON.parse(atob(token.split(".")[1]));
       return payload.role;
     } catch (error) {
       console.error("Unable to read user role:", error);
@@ -27,22 +25,16 @@ function Login() {
     switch (role) {
       case "OWNER":
         return "/owner-dashboard";
-
       case "ADMIN":
         return "/admin-dashboard";
-
       case "ACCOUNTANT":
         return "/finance-dashboard";
-
       case "TEACHER":
         return "/teacher-dashboard";
-
       case "PARENT":
         return "/parent-dashboard";
-
       case "STUDENT":
         return "/dashboard";
-
       default:
         return "/dashboard";
     }
@@ -50,588 +42,572 @@ function Login() {
 
   const handleLogin = async (event) => {
     event.preventDefault();
-
     setMessage("");
     setLoading(true);
 
     try {
-      const response = await api.post(
-        "/auth/login",
-        {
-          email: email,
-          password: password,
-        }
-      );
+      const response = await api.post("/auth/login", {
+        email: email,
+        password: password,
+      });
 
       const accessToken = response.data.access_token;
+      localStorage.setItem("access_token", accessToken);
 
-      localStorage.setItem(
-        "access_token",
-        accessToken
-      );
-
-      const role = getUserRoleFromToken(
-        accessToken
-      );
-
+      const role = getUserRoleFromToken(accessToken);
       if (!role) {
-        setMessage(
-          "Login succeeded, but your user role could not be determined."
-        );
+        setMessage("Login succeeded, but your user role could not be determined.");
         return;
       }
 
-      localStorage.setItem(
-        "user_role",
-        role
-      );
-
-      setMessage("Login successful!");
-
+      localStorage.setItem("user_role", role);
       navigate(getDashboardPath(role));
     } catch (error) {
       console.error("Login error:", error);
-
       if (error.response) {
         setMessage(
           `Server error ${error.response.status}: ${
-            error.response.data?.detail ||
-            "Invalid email or password"
+            error.response.data?.detail || "Invalid email or password"
           }`
         );
       } else if (error.request) {
-        setMessage(
-          "Cannot connect to backend. Make sure FastAPI is running."
-        );
+        setMessage("Cannot connect to backend server. Make sure the API is live.");
       } else {
-        setMessage(
-          `Error: ${error.message}`
-        );
+        setMessage(`Error: ${error.message}`);
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const setDemoRole = (roleEmail) => {
+    setEmail(roleEmail);
+    setMessage("");
+  };
+
   return (
-    <div className="login-page">
+    <div className="dark-login-viewport">
+      {/* Background ambient lighting */}
+      <div className="glow-orb orb-indigo" />
+      <div className="glow-orb orb-cyan" />
+      <div className="grid-overlay" />
+
+      <div className="login-container">
+        {/* Left branding hero */}
+        <section className="brand-hero">
+          <div className="brand-pill">
+            <Sparkles size={16} className="text-cyan" />
+            <span>Next-Generation School Intelligence</span>
+          </div>
+
+          <div className="brand-logo-row">
+            <div className="brand-icon-box">
+              <Cpu size={24} color="#ffffff" />
+            </div>
+            <div>
+              <div className="brand-title-text">
+                EduNexus<span>AI</span>
+              </div>
+              <div className="brand-sub-badge">ENTERPRISE OS</div>
+            </div>
+          </div>
+
+          <h1 className="hero-headline">
+            The Intelligent Operating System for <span className="gradient-text">Modern Education.</span>
+          </h1>
+
+          <p className="hero-description">
+            Unifying students, academics, institutional operations, automated accounting, and real-time AI analytics into a singular high-performance cockpit.
+          </p>
+
+          <div className="highlights-list">
+            <div className="highlight-item">
+              <CheckCircle2 size={18} className="text-emerald" />
+              <span>Multi-tier RBAC for Owners, Admins, Teachers & Students</span>
+            </div>
+            <div className="highlight-item">
+              <CheckCircle2 size={18} className="text-cyan" />
+              <span>Embedded Neural AI Copilot & Automated Fee Engines</span>
+            </div>
+            <div className="highlight-item">
+              <CheckCircle2 size={18} className="text-indigo" />
+              <span>Enterprise-grade security and audited ledger operations</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Right card form */}
+        <section className="glass-login-card">
+          <div className="card-header">
+            <div className="card-tag">SYSTEM ACCESS</div>
+            <h2 className="card-title">Welcome Back</h2>
+            <p className="card-desc">Sign in with your enterprise credentials</p>
+          </div>
+
+          {/* Quick Demo Role Selector */}
+          <div className="demo-roles-wrap">
+            <span className="demo-label">Quick switch:</span>
+            <div className="demo-chips">
+              <button
+                type="button"
+                onClick={() => setDemoRole("owner@edunexus.com")}
+                className={`demo-chip ${email.includes("owner") ? "active" : ""}`}
+              >
+                Owner
+              </button>
+              <button
+                type="button"
+                onClick={() => setDemoRole("admin@edunexus.com")}
+                className={`demo-chip ${email.includes("admin") ? "active" : ""}`}
+              >
+                Admin
+              </button>
+              <button
+                type="button"
+                onClick={() => setDemoRole("student@edunexus.com")}
+                className={`demo-chip ${email.includes("student") ? "active" : ""}`}
+              >
+                Student
+              </button>
+            </div>
+          </div>
+
+          {message && (
+            <div className="error-alert">
+              <span>{message}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="login-form">
+            <div className="input-group">
+              <label className="input-label">
+                <Mail size={14} />
+                <span>Email Address</span>
+              </label>
+              <input
+                type="email"
+                placeholder="name@edunexus.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="dark-input"
+              />
+            </div>
+
+            <div className="input-group">
+              <label className="input-label">
+                <Lock size={14} />
+                <span>Password</span>
+              </label>
+              <input
+                type="password"
+                placeholder="••••••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="dark-input"
+              />
+            </div>
+
+            <button type="submit" disabled={loading} className="glow-submit-btn">
+              {loading ? (
+                <span className="btn-spinner-wrap">
+                  <span className="spinner"></span>
+                  Authenticating...
+                </span>
+              ) : (
+                <span className="btn-inner">
+                  Enter Workspace
+                  <ArrowRight size={16} />
+                </span>
+              )}
+            </button>
+          </form>
+
+          <div className="card-footer-info">
+            <div className="security-guarantee">
+              <Shield size={14} className="text-emerald" />
+              <span>256-Bit Encrypted Session</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
       <style>{`
-        * {
-          box-sizing: border-box;
-        }
-
-        body {
-          margin: 0;
-        }
-
-        button,
-        input {
-          font-family: inherit;
-        }
-
-        .login-page {
+        .dark-login-viewport {
           min-height: 100vh;
+          width: 100%;
+          background: #07090e;
           display: flex;
           align-items: center;
           justify-content: center;
           padding: 30px;
-          background:
-            linear-gradient(
-              135deg,
-              #f8fafc 0%,
-              #f4f7fc 50%,
-              #eef3fb 100%
-            );
-          color: #101828;
-          font-family:
-            Inter,
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
-            Arial,
-            sans-serif;
           position: relative;
           overflow: hidden;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          color: #f8fafc;
         }
 
-        .background-shape-one {
+        .glow-orb {
           position: absolute;
-          width: 420px;
-          height: 420px;
-          top: -230px;
-          right: -160px;
           border-radius: 50%;
-          background: rgba(37, 99, 235, 0.055);
+          filter: blur(100px);
+          opacity: 0.25;
+          pointer-events: none;
         }
 
-        .background-shape-two {
+        .orb-indigo {
+          width: 500px;
+          height: 500px;
+          top: -150px;
+          right: -100px;
+          background: #6366f1;
+        }
+
+        .orb-cyan {
+          width: 450px;
+          height: 450px;
+          bottom: -150px;
+          left: -100px;
+          background: #06b6d4;
+        }
+
+        .grid-overlay {
           position: absolute;
-          width: 350px;
-          height: 350px;
-          bottom: -210px;
-          left: -170px;
-          border-radius: 50%;
-          background: rgba(79, 70, 229, 0.045);
+          inset: 0;
+          background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+          background-size: 32px 32px;
+          opacity: 0.35;
+          pointer-events: none;
         }
 
-        .login-layout {
+        .login-container {
           width: 100%;
-          max-width: 930px;
+          max-width: 1060px;
           display: grid;
-          grid-template-columns: 1fr 410px;
-          gap: 65px;
+          grid-template-columns: 1.1fr 0.9fr;
+          gap: 60px;
           align-items: center;
           position: relative;
           z-index: 2;
         }
 
-        .brand-section {
-          padding: 20px 0;
+        .brand-hero {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
         }
 
-        .brand {
+        .brand-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 14px;
+          background: rgba(99, 102, 241, 0.12);
+          border: 1px solid rgba(99, 102, 241, 0.3);
+          border-radius: 9999px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #a5b4fc;
+          width: fit-content;
+        }
+
+        .brand-logo-row {
           display: flex;
           align-items: center;
-          gap: 11px;
-          margin-bottom: 30px;
+          gap: 14px;
         }
 
-        .brand-mark {
-          width: 39px;
-          height: 39px;
+        .brand-icon-box {
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #6366f1 0%, #3b82f6 50%, #06b6d4 100%);
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 10px;
-          background:
-            linear-gradient(
-              135deg,
-              #2563eb,
-              #4f46e5
-            );
+          box-shadow: 0 4px 20px rgba(99, 102, 241, 0.45);
+        }
+
+        .brand-title-text {
+          font-family: 'Outfit', sans-serif;
+          font-size: 24px;
+          font-weight: 800;
+          letter-spacing: -0.02em;
           color: #ffffff;
-          font-size: 17px;
-          font-weight: 850;
-          box-shadow:
-            0 7px 18px
-            rgba(37, 99, 235, 0.18);
         }
 
-        .brand-name {
-          color: #101828;
-          font-size: 17px;
-          font-weight: 850;
-          letter-spacing: -0.5px;
+        .brand-title-text span {
+          background: linear-gradient(135deg, #38bdf8, #818cf8);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
         }
 
-        .brand-name span {
-          color: #2563eb;
+        .brand-sub-badge {
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.12em;
+          color: #64748b;
         }
 
-        .brand-caption {
-          margin-top: 3px;
-          color: #98a2b3;
-          font-size: 7px;
-          font-weight: 750;
-          letter-spacing: 1px;
-        }
-
-        .welcome-title {
-          max-width: 490px;
+        .hero-headline {
+          font-family: 'Outfit', sans-serif;
+          font-size: 40px;
+          font-weight: 800;
+          line-height: 1.15;
+          letter-spacing: -0.03em;
           margin: 0;
-          color: #101828;
-          font-size: 42px;
-          line-height: 1.1;
-          font-weight: 850;
-          letter-spacing: -1.5px;
+          color: #ffffff;
         }
 
-        .welcome-title span {
-          color: #2563eb;
+        .gradient-text {
+          background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #22d3ee 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
         }
 
-        .welcome-description {
-          max-width: 430px;
-          margin: 16px 0 0;
-          color: #667085;
-          font-size: 12px;
-          line-height: 1.7;
+        .hero-description {
+          font-size: 15px;
+          line-height: 1.6;
+          color: #94a3b8;
+          margin: 0;
         }
 
-        .feature-list {
+        .highlights-list {
           display: flex;
           flex-direction: column;
-          gap: 13px;
-          margin-top: 27px;
+          gap: 12px;
+          margin-top: 10px;
         }
 
-        .feature-item {
+        .highlight-item {
           display: flex;
           align-items: center;
           gap: 10px;
-          color: #475467;
-          font-size: 9px;
-          font-weight: 650;
+          font-size: 13.5px;
+          color: #cbd5e1;
         }
 
-        .feature-icon {
-          width: 27px;
-          height: 27px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 8px;
-          background: #ffffff;
-          border: 1px solid #e5e9ef;
-          color: #2563eb;
-          font-size: 11px;
-          box-shadow:
-            0 3px 9px
-            rgba(16, 24, 40, 0.035);
+        .text-cyan { color: #38bdf8; }
+        .text-emerald { color: #34d399; }
+        .text-indigo { color: #818cf8; }
+
+        /* Card Form */
+        .glass-login-card {
+          background: rgba(17, 23, 38, 0.75);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 20px;
+          padding: 38px 34px;
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(99, 102, 241, 0.12);
         }
 
-        .login-card {
-          padding: 34px;
-          background: #ffffff;
-          border: 1px solid #e1e6ed;
-          border-radius: 18px;
-          box-shadow:
-            0 18px 50px
-            rgba(16, 24, 40, 0.07);
-        }
-
-        .login-card-header {
+        .card-header {
           margin-bottom: 24px;
         }
 
-        .login-label {
+        .card-tag {
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          color: #818cf8;
           margin-bottom: 6px;
-          color: #2563eb;
-          font-size: 8px;
-          font-weight: 850;
-          text-transform: uppercase;
-          letter-spacing: 0.9px;
         }
 
-        .login-title {
-          margin: 0;
-          color: #101828;
-          font-size: 24px;
-          font-weight: 850;
-          letter-spacing: -0.6px;
-        }
-
-        .login-subtitle {
-          margin: 6px 0 0;
-          color: #98a2b3;
-          font-size: 9px;
-          line-height: 1.6;
-        }
-
-        .message {
-          margin-bottom: 17px;
-          padding: 10px 12px;
-          border-radius: 8px;
-          background: #fff7f7;
-          border: 1px solid #fecaca;
-          color: #b91c1c;
-          font-size: 8px;
-          line-height: 1.5;
-          font-weight: 650;
-        }
-
-        .form-group {
-          margin-bottom: 17px;
-        }
-
-        .form-label {
-          display: block;
-          margin-bottom: 7px;
-          color: #344054;
-          font-size: 9px;
-          font-weight: 750;
-        }
-
-        .form-input {
-          width: 100%;
-          padding: 11px 13px;
-          border: 1px solid #d7dce3;
-          border-radius: 9px;
-          background: #ffffff;
-          color: #101828;
-          font-size: 10px;
-          outline: none;
-          transition:
-            border-color 0.18s ease,
-            box-shadow 0.18s ease;
-        }
-
-        .form-input::placeholder {
-          color: #b0b8c4;
-        }
-
-        .form-input:focus {
-          border-color: #84aef5;
-          box-shadow:
-            0 0 0 3px
-            rgba(37, 99, 235, 0.08);
-        }
-
-        .login-button {
-          width: 100%;
-          margin-top: 5px;
-          padding: 12px;
-          border: none;
-          border-radius: 9px;
-          background:
-            linear-gradient(
-              135deg,
-              #2563eb,
-              #4f46e5
-            );
+        .card-title {
+          font-family: 'Outfit', sans-serif;
+          font-size: 26px;
+          font-weight: 700;
+          margin: 0 0 4px;
           color: #ffffff;
-          font-size: 10px;
-          font-weight: 800;
+        }
+
+        .card-desc {
+          font-size: 13.5px;
+          color: #94a3b8;
+          margin: 0;
+        }
+
+        .demo-roles-wrap {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 22px;
+          padding: 8px 12px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 10px;
+        }
+
+        .demo-label {
+          font-size: 11px;
+          color: #64748b;
+          font-weight: 600;
+        }
+
+        .demo-chips {
+          display: flex;
+          gap: 6px;
+        }
+
+        .demo-chip {
+          background: #172033;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: #94a3b8;
+          font-size: 11px;
+          font-weight: 600;
+          padding: 3px 8px;
+          border-radius: 6px;
           cursor: pointer;
-          box-shadow:
-            0 6px 14px
-            rgba(37, 99, 235, 0.16);
-          transition:
-            transform 0.18s ease,
-            box-shadow 0.18s ease,
-            opacity 0.18s ease;
+          transition: all 0.2s;
         }
 
-        .login-button:hover:not(:disabled) {
+        .demo-chip:hover {
+          color: #ffffff;
+          border-color: #6366f1;
+        }
+
+        .demo-chip.active {
+          background: rgba(99, 102, 241, 0.2);
+          border-color: #6366f1;
+          color: #a5b4fc;
+        }
+
+        .error-alert {
+          background: rgba(244, 63, 94, 0.12);
+          border: 1px solid rgba(244, 63, 94, 0.3);
+          color: #fb7185;
+          padding: 10px 14px;
+          border-radius: 8px;
+          font-size: 13px;
+          margin-bottom: 20px;
+        }
+
+        .login-form {
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+        }
+
+        .input-group {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .input-label {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12.5px;
+          font-weight: 600;
+          color: #cbd5e1;
+        }
+
+        .dark-input {
+          background: #0b0f19 !important;
+          border: 1px solid rgba(255, 255, 255, 0.12) !important;
+          border-radius: 10px !important;
+          padding: 12px 14px;
+          color: #ffffff !important;
+          font-size: 14px;
+          transition: all 0.2s;
+        }
+
+        .dark-input:focus {
+          border-color: #6366f1 !important;
+          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
+        }
+
+        .glow-submit-btn {
+          margin-top: 6px;
+          padding: 13px;
+          background: linear-gradient(135deg, #6366f1 0%, #3b82f6 50%, #06b6d4 100%);
+          border: none;
+          border-radius: 10px;
+          color: #ffffff;
+          font-family: inherit;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .glow-submit-btn:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow:
-            0 9px 18px
-            rgba(37, 99, 235, 0.2);
+          box-shadow: 0 8px 26px rgba(99, 102, 241, 0.55);
+          filter: brightness(1.08);
         }
 
-        .login-button:disabled {
-          opacity: 0.7;
+        .glow-submit-btn:disabled {
+          opacity: 0.6;
           cursor: default;
         }
 
-        .login-footer {
-          margin-top: 20px;
-          padding-top: 17px;
-          border-top: 1px solid #eef0f3;
-          text-align: center;
-          color: #98a2b3;
-          font-size: 7px;
-          line-height: 1.6;
-        }
-
-        .secure-badge {
-          display: inline-flex;
+        .btn-inner {
+          display: flex;
           align-items: center;
-          gap: 5px;
-          margin-top: 11px;
-          padding: 5px 8px;
-          border-radius: 6px;
-          background: #f8fafc;
-          border: 1px solid #eef0f3;
-          color: #667085;
-          font-size: 7px;
-          font-weight: 700;
+          justify-content: center;
+          gap: 8px;
         }
 
-        @media (max-width: 800px) {
-          .login-layout {
+        .btn-spinner-wrap {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+
+        .spinner {
+          width: 14px;
+          height: 14px;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-top-color: #ffffff;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        .card-footer-info {
+          margin-top: 24px;
+          padding-top: 18px;
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          display: flex;
+          justify-content: center;
+        }
+
+        .security-guarantee {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11.5px;
+          color: #64748b;
+          font-weight: 500;
+        }
+
+        @media (max-width: 900px) {
+          .login-container {
             grid-template-columns: 1fr;
-            max-width: 430px;
-            gap: 25px;
+            max-width: 460px;
+            gap: 36px;
           }
-
-          .brand-section {
+          .brand-hero {
             text-align: center;
+            align-items: center;
           }
-
-          .brand {
-            justify-content: center;
-            margin-bottom: 20px;
+          .hero-headline {
+            font-size: 30px;
           }
-
-          .welcome-title {
-            max-width: none;
-            font-size: 32px;
-          }
-
-          .welcome-description {
-            margin-left: auto;
-            margin-right: auto;
-          }
-
-          .feature-list {
+          .highlights-list {
             display: none;
           }
         }
-
-        @media (max-width: 480px) {
-          .login-page {
-            padding: 18px;
-          }
-
-          .login-card {
-            padding: 25px 21px;
-          }
-
-          .welcome-title {
-            font-size: 28px;
-          }
-
-          .welcome-description {
-            font-size: 10px;
-          }
-        }
       `}</style>
-
-      <div className="background-shape-one" />
-      <div className="background-shape-two" />
-
-      <div className="login-layout">
-        <section className="brand-section">
-          <div className="brand">
-            <div className="brand-mark">E</div>
-
-            <div>
-              <div className="brand-name">
-                edu<span>nexus.ai</span>
-              </div>
-
-              <div className="brand-caption">
-                AI SCHOOL OPERATING SYSTEM
-              </div>
-            </div>
-          </div>
-
-          <h1 className="welcome-title">
-            One platform.
-            <br />
-            <span>Every learner.</span>
-          </h1>
-
-          <p className="welcome-description">
-            EduNexus AI brings school management,
-            learning, communication, finance, and
-            intelligent assistance into one connected
-            platform.
-          </p>
-
-          <div className="feature-list">
-            <div className="feature-item">
-              <div className="feature-icon">
-                ✓
-              </div>
-
-              <span>
-                Manage your school in one place
-              </span>
-            </div>
-
-            <div className="feature-item">
-              <div className="feature-icon">
-                ✦
-              </div>
-
-              <span>
-                Use AI-powered school intelligence
-              </span>
-            </div>
-
-            <div className="feature-item">
-              <div className="feature-icon">
-                ✓
-              </div>
-
-              <span>
-                Give every role the right workspace
-              </span>
-            </div>
-          </div>
-        </section>
-
-        <section className="login-card">
-          <div className="login-card-header">
-            <div className="login-label">
-              EduNexus AI
-            </div>
-
-            <h2 className="login-title">
-              Welcome back
-            </h2>
-
-            <p className="login-subtitle">
-              Sign in to access your school workspace.
-            </p>
-          </div>
-
-          {message && (
-            <div className="message">
-              {message}
-            </div>
-          )}
-
-          <form onSubmit={handleLogin}>
-            <div className="form-group">
-              <label className="form-label">
-                Email Address
-              </label>
-
-              <input
-                className="form-input"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(event) =>
-                  setEmail(event.target.value)
-                }
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">
-                Password
-              </label>
-
-              <input
-                className="form-input"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(event) =>
-                  setPassword(event.target.value)
-                }
-                required
-              />
-            </div>
-
-            <button
-              className="login-button"
-              type="submit"
-              disabled={loading}
-            >
-              {loading
-                ? "Signing in..."
-                : "Sign In"}
-            </button>
-          </form>
-
-          <div className="login-footer">
-            <div>
-              Sign in using your EduNexus AI
-              account credentials.
-            </div>
-
-            <div className="secure-badge">
-              🔒 Secure authenticated access
-            </div>
-          </div>
-        </section>
-      </div>
     </div>
   );
 }
