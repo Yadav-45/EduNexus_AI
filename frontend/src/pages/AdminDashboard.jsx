@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import AppLayout from "../components/AppLayout";
@@ -12,19 +12,20 @@ import {
   MessageSquare,
   BookOpen,
   FolderOpen,
-  Bot,
   ArrowRight,
   TrendingUp,
   Activity,
-  ShieldCheck,
   Clock,
   Bell,
   CheckCircle2,
   AlertTriangle,
-  QrCode,
   Calendar,
   Building2,
-  Sparkles,
+  Plus,
+  Bus,
+  Package,
+  Award,
+  Check,
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -44,7 +45,7 @@ export default function AdminDashboard() {
           : [];
         setUsers(data);
       } catch (error) {
-        console.error("Unable to load users:", error);
+        console.error("Unable to load user directory:", error);
       } finally {
         setLoading(false);
       }
@@ -53,598 +54,655 @@ export default function AdminDashboard() {
     loadUsers();
   }, []);
 
-  const getCount = (role) => {
-    return users.filter((user) => user.role === role).length;
-  };
+  const stats = useMemo(() => {
+    const studentCount = users.filter((u) => u.role === "STUDENT").length || 1248;
+    const teacherCount = users.filter((u) => u.role === "TEACHER").length || 78;
+    const parentCount = users.filter((u) => u.role === "PARENT").length || 890;
+    const activeCount = users.filter((u) => u.is_active).length || 1195;
 
-  const totalUsersCount = users.length > 0 ? users.length : 1420;
-  const studentCount = getCount("STUDENT") || 1184;
-  const teacherCount = getCount("TEACHER") || 68;
-  const parentCount = getCount("PARENT") || 892;
-  const activeUsers = users.filter((user) => user.is_active).length || 842;
+    return {
+      students: studentCount,
+      faculty: teacherCount,
+      parents: parentCount,
+      active: activeCount,
+      attendanceRate: 94.2,
+      presentToday: Math.round(studentCount * 0.942),
+      absentToday: Math.round(studentCount * 0.058),
+    };
+  }, [users]);
 
-  const modules = [
+  // Operational Modules Directory
+  const coreModules = [
     {
+      title: "Students 360°",
+      desc: "Enrollment records, cohorts, student profiles, and academic dossiers.",
       icon: GraduationCap,
-      title: "Students 360° Management",
-      description: "Manage student cohorts, sections, national CDC registrations, and dossiers.",
+      color: "text-indigo-400 bg-indigo-500/10",
       path: "/students",
-      color: "#6366f1",
-      badge: "1,184 Enrolled",
+      badge: `${stats.students} Enrolled`,
     },
     {
-      icon: Briefcase,
-      title: "Faculty & Staff HR Roster",
-      description: "Comprehensive faculty directory, payroll generation, biometric shifts, and tenure.",
-      path: "/staff",
-      color: "#3b82f6",
-      badge: "68 Faculty",
-    },
-    {
+      title: "Admissions Hub",
+      desc: "Candidate onboarding pipeline, document checks, and status tracking.",
       icon: UserCheck,
-      title: "Admissions Pipeline",
-      description: "Automated candidate onboarding, entrance evaluation scoring, and enrollment status.",
+      color: "text-cyan-400 bg-cyan-500/10",
       path: "/admissions",
-      color: "#06b6d4",
-      badge: "Active Intake",
+      badge: "Intake Active",
     },
     {
+      title: "Daily Attendance",
+      desc: "Section-by-section presence tracking, absence logs, and SMS notifications.",
       icon: CalendarCheck,
-      title: "Daily Biometric Attendance",
-      description: "Real-time presence logging, automated Sparrow SMS absenteeism notices, and reports.",
+      color: "text-emerald-400 bg-emerald-500/10",
       path: "/attendance",
-      color: "#10b981",
-      badge: "94.2% Present Today",
+      badge: `${stats.attendanceRate}% Present`,
     },
     {
+      title: "Tuition & Fee Desk",
+      desc: "Student fee accounts, online payments, receipts, and aging balances.",
       icon: CreditCard,
-      title: "Fee & Billing Control (NPR)",
-      description: "Student ledgers, outstanding balances, eSewa/Khalti gateway reconciliations, and receipts.",
+      color: "text-amber-400 bg-amber-500/10",
       path: "/fees",
-      color: "#f59e0b",
-      badge: "रू ७८.४५ लाख संकलित",
+      badge: "Billing Live",
     },
     {
-      icon: BookOpen,
-      title: "Academic Operations & Exams",
-      description: "Curriculum oversight, syllabus distribution, NEB/SEE marks ledger, and routine schedules.",
-      path: "/academic/exams",
-      color: "#a855f7",
-      badge: "SEE: १३८ दिन बाँकी",
+      title: "Faculty & Staff HR",
+      desc: "Faculty roster, shift allocations, leaves, and monthly payroll slips.",
+      icon: Briefcase,
+      color: "text-purple-400 bg-purple-500/10",
+      path: "/staff",
+      badge: `${stats.faculty} Faculty`,
     },
     {
-      icon: MessageSquare,
-      title: "Notice & Messaging Desk",
-      description: "Broadcast emergency announcements, class circulations, and targeted parent SMS/Viber.",
-      path: "/communication",
-      color: "#ec4899",
-      badge: "Sparrow SMS Ready",
+      title: "Academic Exams",
+      desc: "Term exam scheduling, marks entry, report card generation, and ranks.",
+      icon: Award,
+      color: "text-rose-400 bg-rose-500/10",
+      path: "/academic/exam",
+      badge: "Term 2 Schedule",
     },
     {
-      icon: FolderOpen,
-      title: "Document Vault & Verification",
-      description: "Encrypted institutional file depository, certificates, verification, and archive storage.",
-      path: "/documents",
-      color: "#8b5cf6",
-      badge: "PAN: ६०१२४८९२१",
+      title: "Campus Inventory",
+      desc: "Stock tracking, educational supplies, vendor orders, and movements.",
+      icon: Package,
+      color: "text-teal-400 bg-teal-500/10",
+      path: "/inventory",
+      badge: "Supplies Stocked",
     },
     {
-      icon: Bot,
-      title: "AI Institutional Copilot",
-      description: "Conversational machine intelligence querying operational data, metrics, and academic forecasts.",
-      path: "/ai-tutor",
-      color: "#14b8a6",
-      badge: "Bilingual (नेपाली/Eng)",
+      title: "Transport & Fleets",
+      desc: "Bus routes, driver allocations, vehicle maintenance, and student transit.",
+      icon: Bus,
+      color: "text-orange-400 bg-orange-500/10",
+      path: "/transport",
+      badge: "12 Routes Active",
     },
+  ];
+
+  // Daily Administrative Action Checklist
+  const dailyTasks = [
+    { id: 1, title: "Review 3 incoming admissions applications", time: "Morning Priority", done: false },
+    { id: 2, title: "Verify morning bus transit route arrivals", time: "08:45 AM", done: true },
+    { id: 3, title: "Trigger daily absence alerts to parents", time: "10:30 AM", done: true },
+    { id: 4, title: "Reconcile daily fee receipts with bank statements", time: "03:30 PM", done: false },
+  ];
+
+  // Recent Activity Log
+  const activityLogs = [
+    { id: 1, text: "Fee receipt #REC-2081-8942 issued for Aarav Sharma ($1,250)", time: "15m ago" },
+    { id: 2, text: "New student admission registered: Siddhartha Joshi (Grade 11)", time: "1h ago" },
+    { id: 3, text: "Staff leave approved: Er. Suresh Adhikari (Math Dept, 1 day)", time: "2h ago" },
+    { id: 4, text: "Mid-Term Examination schedule circular dispatched to parents", time: "Yesterday" },
   ];
 
   return (
     <AppLayout
-      title="प्रशासनिक कमान्ड सेन्टर (Admin Command Hub)"
-      subtitle="Institutional orchestration, biometric attendance controls, fee audits, and emergency SMS broadcasts"
+      title="Administrative Operations Hub"
+      subtitle="School Management Console • Session 2025–2026"
       actions={
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div className="flex items-center gap-2">
           <button
             onClick={() => navigate("/attendance")}
-            className="btn btn-secondary"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "7px 14px",
-              fontSize: "12px",
-              background: "rgba(16, 185, 129, 0.12)",
-              border: "1px solid rgba(16, 185, 129, 0.3)",
-              color: "#34d399",
-              fontWeight: 600,
-            }}
+            className="admin-btn secondary"
           >
             <CalendarCheck size={14} />
-            <span>दैनिक हाजिरी जाँच</span>
+            <span>Mark Attendance</span>
           </button>
-
           <button
-            onClick={() => navigate("/communication")}
-            className="btn btn-primary"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "7px 16px",
-              fontSize: "12px",
-              background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
-            }}
+            onClick={() => navigate("/admissions/new")}
+            className="admin-btn primary"
           >
-            <Bell size={14} />
-            <span>सूचना जारी गर्नुहोस्</span>
+            <Plus size={14} />
+            <span>New Admission</span>
           </button>
         </div>
       }
     >
-      <div className="admin-page-container">
+      <div className="admin-container">
         {/* ============================================================
-            CAMPUS IDENTITY & TODAY'S INSTITUTIONAL PULSE
+            ROW 1: 4 CLEAR OPERATIONAL KPIS (UNDERSTAND IN 20 SECONDS)
             ============================================================ */}
-        <section className="admin-hero-banner">
-          <div className="hero-left">
-            <div className="campus-badge-row">
-              <span className="campus-pill">
-                <Building2 size={13} />
-                <span>काठमाडौँ मुख्य क्याम्पस (Kathmandu Central)</span>
-              </span>
-              <span className="nepal-date-pill">
-                <Calendar size={13} />
-                <span>वि.सं. २०८१ आश्विन २४, शुक्रबार</span>
-              </span>
-            </div>
-            <h2 className="admin-headline">
-              दैनिक प्रशासनिक स्थिति तथा उपस्थिति सारांश (Today's Pulse)
-            </h2>
-            <p className="admin-subtext">
-              सम्पूर्ण शैक्षिक सत्रको दैनिक घण्टी सञ्चालन, शिक्षक सट्टा व्यवस्थापन तथा विद्यार्थी उपस्थिति चुस्त अवस्थामा छ।
-            </p>
-          </div>
-
-          <div className="hero-metrics-pill-group">
-            <div className="pulse-metric-card">
-              <span className="pulse-label">विद्यार्थी उपस्थिति दर</span>
-              <strong className="pulse-val text-emerald">९४.२%</strong>
-              <span className="pulse-sub">१,११५ / १,१८४ उपस्थित</span>
-            </div>
-
-            <div className="pulse-metric-card">
-              <span className="pulse-label">प्राध्यापक बायोमेट्रिक</span>
-              <strong className="pulse-val text-cyan">९८.५%</strong>
-              <span className="pulse-sub">६७ / ६८ घण्टीमा सक्रिय</span>
-            </div>
-
-            <div className="pulse-metric-card">
-              <span className="pulse-label">आजको संकलित शुल्क</span>
-              <strong className="pulse-val text-amber">रू २,४५,०००</strong>
-              <span className="pulse-sub">eSewa/Fonepay काउन्टर</span>
-            </div>
-          </div>
-        </section>
-
-        {/* ============================================================
-            KPI ROW: Total Records, Students, Faculty, Parents, Active
-            ============================================================ */}
-        <section className="kpi-grid">
-          <div className="kpi-card">
-            <div className="kpi-header">
-              <span className="kpi-label">कुल दर्ता रेकर्ड (Total Records)</span>
-              <div className="kpi-icon-box" style={{ background: "rgba(99, 102, 241, 0.15)", color: "#6366f1" }}>
-                <Users size={18} />
-              </div>
-            </div>
-            <div className="kpi-value">{loading ? "..." : totalUsersCount.toLocaleString()}</div>
-            <div className="kpi-note">नेपाल सरकार शिक्षा मन्त्रालय मापदण्ड</div>
-          </div>
-
-          <div className="kpi-card">
-            <div className="kpi-header">
-              <span className="kpi-label">विद्यार्थी संख्या (Scholars)</span>
-              <div className="kpi-icon-box" style={{ background: "rgba(6, 182, 212, 0.15)", color: "#06b6d4" }}>
+        <section className="admin-kpi-grid">
+          <div className="admin-kpi-card">
+            <div className="kpi-top">
+              <span className="kpi-tag">Enrolled Students</span>
+              <div className="kpi-icon-pill text-indigo-400 bg-indigo-500/10">
                 <GraduationCap size={18} />
               </div>
             </div>
-            <div className="kpi-value" style={{ color: "#06b6d4" }}>
-              {loading ? "..." : studentCount.toLocaleString()}
+            <div className="kpi-number">{loading ? "..." : stats.students.toLocaleString()}</div>
+            <div className="kpi-meta text-slate-400">
+              Grade 1 through 12 • <strong className="text-emerald-400">{stats.active} Active</strong>
             </div>
-            <div className="kpi-note">कक्षा १ देखि १२ सम्म सक्रिय</div>
           </div>
 
-          <div className="kpi-card">
-            <div className="kpi-header">
-              <span className="kpi-label">शिक्षक तथा कर्मचारी (Faculty)</span>
-              <div className="kpi-icon-box" style={{ background: "rgba(168, 85, 247, 0.15)", color: "#a855f7" }}>
+          <div className="admin-kpi-card">
+            <div className="kpi-top">
+              <span className="kpi-tag">Today's Attendance</span>
+              <div className="kpi-icon-pill text-emerald-400 bg-emerald-500/10">
+                <CalendarCheck size={18} />
+              </div>
+            </div>
+            <div className="kpi-number">{stats.attendanceRate}%</div>
+            <div className="kpi-meta text-emerald-400">
+              {stats.presentToday} Present <span className="text-slate-400">• {stats.absentToday} Absent</span>
+            </div>
+          </div>
+
+          <div className="admin-kpi-card">
+            <div className="kpi-top">
+              <span className="kpi-tag">Faculty & Staff</span>
+              <div className="kpi-icon-pill text-cyan-400 bg-cyan-500/10">
                 <Briefcase size={18} />
               </div>
             </div>
-            <div className="kpi-value" style={{ color: "#a855f7" }}>
-              {loading ? "..." : teacherCount}
+            <div className="kpi-number">{stats.faculty}</div>
+            <div className="kpi-meta text-cyan-400">
+              96% Biometric Presence <span className="text-slate-400">• Full Shift</span>
             </div>
-            <div className="kpi-note">मावि तथा उच्च मावि संकाय</div>
           </div>
 
-          <div className="kpi-card">
-            <div className="kpi-header">
-              <span className="kpi-label">अभिभावक सञ्जाल (Guardians)</span>
-              <div className="kpi-icon-box" style={{ background: "rgba(245, 158, 11, 0.15)", color: "#f59e0b" }}>
-                <ShieldCheck size={18} />
+          <div className="admin-kpi-card">
+            <div className="kpi-top">
+              <span className="kpi-tag">Tuition Collection</span>
+              <div className="kpi-icon-pill text-amber-400 bg-amber-500/10">
+                <CreditCard size={18} />
               </div>
             </div>
-            <div className="kpi-value" style={{ color: "#f59e0b" }}>
-              {loading ? "..." : parentCount.toLocaleString()}
+            <div className="kpi-number">$48,650</div>
+            <div className="kpi-meta text-amber-400">
+              92.4% Target Met <span className="text-slate-400">• Month-to-date</span>
             </div>
-            <div className="kpi-note">भाइबर तथा एसएमएस लिङ्क</div>
-          </div>
-
-          <div className="kpi-card">
-            <div className="kpi-header">
-              <span className="kpi-label">सक्रिय अनलाइन सत्रहरू</span>
-              <div className="kpi-icon-box" style={{ background: "rgba(16, 185, 129, 0.15)", color: "#10b981" }}>
-                <Activity size={18} />
-              </div>
-            </div>
-            <div className="kpi-value" style={{ color: "#10b981" }}>
-              {loading ? "..." : activeUsers}
-            </div>
-            <div className="kpi-note">प्रणालीमा हाल प्रत्यक्ष जोडिएका</div>
           </div>
         </section>
 
         {/* ============================================================
-            CORE ADMINISTRATIVE SYSTEMS GRID
+            ROW 2: TWO-COLUMN MAIN WORKSPACE (BALANCED & FAST TO SCAN)
             ============================================================ */}
-        <section className="operations-section">
-          <div className="section-header">
-            <div>
-              <h2 className="section-title">संस्थागत प्रशासनिक मोड्युलहरू (Institutional Systems)</h2>
-              <p className="section-desc">
-                विद्यार्थी ३६०°, दैनिक हाजिरी, तलब सिट (NPR), शुल्क लेखापरीक्षण र पाठ्यक्रम नियन्त्रण
-              </p>
-            </div>
-            <div className="live-status-pill">
-              <span className="live-dot" />
-              <span>प्रणाली सामान्य अवस्थामा (All Live)</span>
-            </div>
-          </div>
-
-          <div className="modules-grid">
-            {modules.map((m) => {
-              const Icon = m.icon;
-              return (
-                <div
-                  key={m.title}
-                  onClick={() => navigate(m.path)}
-                  className="module-card"
-                >
-                  <div className="module-top">
-                    <div
-                      className="module-icon-box"
-                      style={{
-                        background: `${m.color}1a`,
-                        color: m.color,
-                        borderColor: `${m.color}33`,
-                      }}
-                    >
-                      <Icon size={22} />
-                    </div>
-                    <span
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        padding: "3px 8px",
-                        borderRadius: "6px",
-                        background: "rgba(255, 255, 255, 0.05)",
-                        border: "1px solid rgba(255, 255, 255, 0.08)",
-                        color: "#e2e8f0",
-                      }}
-                    >
-                      {m.badge}
-                    </span>
-                  </div>
-
-                  <h3 className="module-name">{m.title}</h3>
-                  <p className="module-desc">{m.description}</p>
-
-                  <div className="module-action-row">
-                    <span className="module-link-text">मोड्युल खोल्नुहोस् →</span>
-                  </div>
+        <div className="admin-layout-grid">
+          {/* ==================== LEFT COLUMN (CORE MODULES & ACTIONS - 65%) ==================== */}
+          <div className="admin-main-column">
+            {/* CORE MODULES DIRECTORY */}
+            <div className="admin-card">
+              <div className="admin-card-header">
+                <div>
+                  <h3 className="admin-card-title">School Operational Modules</h3>
+                  <p className="admin-card-desc">
+                    Centralized management portals for daily administration
+                  </p>
                 </div>
-              );
-            })}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-3">
+                {coreModules.map((mod, idx) => {
+                  const Icon = mod.icon;
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => navigate(mod.path)}
+                      className="module-card-box"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className={`module-icon-wrap ${mod.color}`}>
+                          <Icon size={18} />
+                        </div>
+                        <span className="module-badge">{mod.badge}</span>
+                      </div>
+                      <h4 className="module-card-name">{mod.title}</h4>
+                      <p className="module-card-detail">{mod.desc}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* GRADE COHORT HEADCOUNT OVERVIEW */}
+            <div className="admin-card mt-6">
+              <div className="admin-card-header">
+                <div>
+                  <h3 className="admin-card-title">Student Cohort Distribution</h3>
+                  <p className="admin-card-desc">
+                    Enrollment counts and section allocations by grade level
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate("/students")}
+                  className="card-text-link"
+                >
+                  <span>Student Registry</span>
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
+                <div className="cohort-item">
+                  <span className="cohort-level">Primary (Grades 1-5)</span>
+                  <strong className="cohort-val">412 Students</strong>
+                  <span className="cohort-sub">12 Sections • 96% Pres.</span>
+                </div>
+                <div className="cohort-item">
+                  <span className="cohort-level">Middle (Grades 6-8)</span>
+                  <strong className="cohort-val">348 Students</strong>
+                  <span className="cohort-sub">9 Sections • 94% Pres.</span>
+                </div>
+                <div className="cohort-item">
+                  <span className="cohort-level">Secondary (Grades 9-10)</span>
+                  <strong className="cohort-val">286 Students</strong>
+                  <span className="cohort-sub">8 Sections • 93% Pres.</span>
+                </div>
+                <div className="cohort-item">
+                  <span className="cohort-level">Higher Sec (11-12)</span>
+                  <strong className="cohort-val">202 Students</strong>
+                  <span className="cohort-sub">6 Sections • 94% Pres.</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </section>
+
+          {/* ==================== RIGHT COLUMN (CHECKLIST & ACTIVITY - 35%) ==================== */}
+          <div className="admin-side-column">
+            {/* DAILY ADMINISTRATIVE CHECKLIST */}
+            <div className="admin-card">
+              <div className="admin-card-header">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-emerald-400" />
+                  <h3 className="admin-card-title">Today's Admin Tasks</h3>
+                </div>
+                <span className="text-xs text-slate-400">4 Items</span>
+              </div>
+
+              <div className="space-y-2 mt-3">
+                {dailyTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className={`task-row ${task.done ? "task-done" : ""}`}
+                  >
+                    <div
+                      className={`task-check-circle ${
+                        task.done ? "done-circle" : "pending-circle"
+                      }`}
+                    >
+                      {task.done ? <Check size={12} /> : null}
+                    </div>
+                    <div className="flex-1">
+                      <h5 className="task-title">{task.title}</h5>
+                      <span className="task-time">{task.time}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* QUICK ACTIONS */}
+            <div className="admin-card mt-6">
+              <h3 className="admin-card-title mb-1">Quick Actions</h3>
+              <p className="admin-card-desc mb-3">Frequent administrative shortcuts</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => navigate("/admissions/new")}
+                  className="quick-action-tile"
+                >
+                  <Plus size={15} className="text-cyan-400" />
+                  <span>Add Student</span>
+                </button>
+                <button
+                  onClick={() => navigate("/fees")}
+                  className="quick-action-tile"
+                >
+                  <CreditCard size={15} className="text-emerald-400" />
+                  <span>Record Fee</span>
+                </button>
+                <button
+                  onClick={() => navigate("/communication")}
+                  className="quick-action-tile"
+                >
+                  <Bell size={15} className="text-amber-400" />
+                  <span>Send Notice</span>
+                </button>
+                <button
+                  onClick={() => navigate("/staff/new")}
+                  className="quick-action-tile"
+                >
+                  <Briefcase size={15} className="text-indigo-400" />
+                  <span>Add Faculty</span>
+                </button>
+              </div>
+            </div>
+
+            {/* RECENT OPERATIONAL LOG */}
+            <div className="admin-card mt-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Activity size={16} className="text-indigo-400" />
+                  <h3 className="admin-card-title">Recent Activity</h3>
+                </div>
+                <span className="text-xs text-slate-400">Live Feed</span>
+              </div>
+
+              <div className="space-y-2.5">
+                {activityLogs.map((log) => (
+                  <div key={log.id} className="activity-row">
+                    <span className="activity-dot" />
+                    <div className="flex-1">
+                      <p className="activity-text">{log.text}</p>
+                      <span className="activity-time">{log.time}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <style>{`
-        .admin-page-container {
-          display: flex;
-          flex-direction: column;
-          gap: 28px;
+        .admin-container {
           max-width: 1400px;
           margin: 0 auto;
-        }
-
-        .admin-hero-banner {
-          background: linear-gradient(135deg, rgba(23, 32, 51, 0.95) 0%, rgba(13, 18, 30, 0.98) 100%);
-          border: 1px solid rgba(99, 102, 241, 0.25);
-          border-radius: 20px;
-          padding: 24px 28px;
           display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 24px;
+          flex-direction: column;
+          gap: 22px;
         }
 
-        .hero-left {
-          flex: 1;
+        .admin-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 13px;
+          font-weight: 600;
+          padding: 7px 13px;
+          border-radius: 8px;
+          cursor: pointer;
+          border: none;
+          transition: all 0.2s ease;
+        }
+        .admin-btn.primary {
+          background: #4f46e5;
+          color: #ffffff;
+        }
+        .admin-btn.primary:hover {
+          background: #4338ca;
+        }
+        .admin-btn.secondary {
+          background: rgba(255, 255, 255, 0.08);
+          color: #e2e8f0;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .admin-btn.secondary:hover {
+          background: rgba(255, 255, 255, 0.14);
+        }
+
+        .admin-kpi-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+          gap: 16px;
+        }
+
+        .admin-kpi-card {
+          background: #0f1523;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 12px;
+          padding: 16px 18px;
           display: flex;
           flex-direction: column;
           gap: 6px;
         }
 
-        .campus-badge-row {
+        .kpi-top {
           display: flex;
           align-items: center;
-          gap: 10px;
-          flex-wrap: wrap;
-          margin-bottom: 4px;
+          justify-content: space-between;
         }
 
-        .campus-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 4px 10px;
-          border-radius: 8px;
-          background: rgba(99, 102, 241, 0.15);
-          border: 1px solid rgba(99, 102, 241, 0.3);
-          color: #818cf8;
+        .kpi-tag {
           font-size: 11.5px;
-          font-weight: 700;
-        }
-
-        .nepal-date-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 4px 10px;
-          border-radius: 8px;
-          background: rgba(245, 158, 11, 0.15);
-          border: 1px solid rgba(245, 158, 11, 0.3);
-          color: #fbbf24;
-          font-size: 11.5px;
-          font-weight: 700;
-        }
-
-        .admin-headline {
-          margin: 0;
-          font-family: 'Outfit', sans-serif;
-          font-size: 22px;
-          font-weight: 800;
-          color: #ffffff;
-          letter-spacing: -0.01em;
-        }
-
-        .admin-subtext {
-          margin: 0;
-          font-size: 13px;
+          font-weight: 500;
           color: #94a3b8;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
         }
 
-        .hero-metrics-pill-group {
+        .kpi-icon-pill {
+          width: 30px;
+          height: 30px;
+          border-radius: 7px;
           display: flex;
-          gap: 12px;
-          flex-wrap: wrap;
+          align-items: center;
+          justify-content: center;
         }
 
-        .pulse-metric-card {
-          background: rgba(11, 15, 25, 0.7);
+        .kpi-number {
+          font-size: 24px;
+          font-weight: 700;
+          color: #f8fafc;
+        }
+
+        .kpi-meta {
+          font-size: 12px;
+        }
+
+        .admin-layout-grid {
+          display: grid;
+          grid-template-columns: 66% calc(34% - 20px);
+          gap: 20px;
+          align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+          .admin-layout-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        .admin-card {
+          background: #0f1523;
           border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 14px;
-          padding: 12px 18px;
-          min-width: 140px;
+          border-radius: 12px;
+          padding: 18px 20px;
+        }
+
+        .admin-card-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .admin-card-title {
+          font-size: 15px;
+          font-weight: 600;
+          color: #f1f5f9;
+        }
+
+        .admin-card-desc {
+          font-size: 12px;
+          color: #94a3b8;
+          margin-top: 2px;
+        }
+
+        .card-text-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 12px;
+          color: #818cf8;
+          background: none;
+          border: none;
+          cursor: pointer;
+        }
+        .card-text-link:hover {
+          color: #a5b4fc;
+          text-decoration: underline;
+        }
+
+        .module-card-box {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 10px;
+          padding: 14px;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+        .module-card-box:hover {
+          background: rgba(255, 255, 255, 0.06);
+          border-color: rgba(255, 255, 255, 0.14);
+          transform: translateY(-1px);
+        }
+
+        .module-icon-wrap {
+          width: 32px;
+          height: 32px;
+          border-radius: 7px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .module-badge {
+          font-size: 10.5px;
+          font-weight: 600;
+          color: #94a3b8;
+          background: rgba(255, 255, 255, 0.05);
+          padding: 2px 7px;
+          border-radius: 5px;
+        }
+
+        .module-card-name {
+          font-size: 13.5px;
+          font-weight: 600;
+          color: #f8fafc;
+          margin-top: 10px;
+        }
+
+        .module-card-detail {
+          font-size: 11.5px;
+          color: #94a3b8;
+          margin-top: 3px;
+          line-height: 1.4;
+        }
+
+        .cohort-item {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 8px;
+          padding: 10px 12px;
           display: flex;
           flex-direction: column;
           gap: 2px;
         }
 
-        .pulse-label {
+        .cohort-level {
           font-size: 11px;
           color: #94a3b8;
-          font-weight: 600;
         }
-
-        .pulse-val {
-          font-family: 'Outfit', sans-serif;
-          font-size: 22px;
-          font-weight: 800;
+        .cohort-val {
+          font-size: 14px;
+          font-weight: 700;
+          color: #f1f5f9;
         }
-
-        .text-emerald { color: #34d399; }
-        .text-cyan { color: #38bdf8; }
-        .text-amber { color: #fbbf24; }
-
-        .pulse-sub {
+        .cohort-sub {
           font-size: 10.5px;
           color: #64748b;
         }
 
-        .kpi-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-          gap: 18px;
-        }
-
-        .kpi-card {
-          background: #111726;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px;
-          padding: 20px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-          transition: all 0.2s ease;
-        }
-
-        .kpi-card:hover {
-          border-color: rgba(255, 255, 255, 0.16);
-          transform: translateY(-2px);
-        }
-
-        .kpi-header {
+        .task-row {
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          gap: 10px;
+          padding: 8px 10px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          border-radius: 7px;
         }
-
-        .kpi-label {
-          font-size: 11px;
-          color: #94a3b8;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          font-weight: 700;
+        .task-row.task-done {
+          opacity: 0.6;
         }
-
-        .kpi-icon-box {
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
+        .task-check-circle {
+          width: 18px;
+          height: 18px;
+          border-radius: 4px;
           display: flex;
           align-items: center;
           justify-content: center;
         }
-
-        .kpi-value {
-          font-family: 'Outfit', sans-serif;
-          font-size: 28px;
-          font-weight: 800;
+        .done-circle {
+          background: #10b981;
           color: #ffffff;
         }
-
-        .kpi-note {
-          font-size: 11.5px;
-          color: #64748b;
+        .pending-circle {
+          border: 1.5px solid rgba(255, 255, 255, 0.2);
         }
-
-        .operations-section {
-          display: flex;
-          flex-direction: column;
-          gap: 18px;
+        .task-title {
+          font-size: 12px;
+          font-weight: 500;
+          color: #e2e8f0;
         }
-
-        .section-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 12px;
-        }
-
-        .section-title {
-          margin: 0;
-          font-size: 18px;
-          font-weight: 800;
-          color: #ffffff;
-        }
-
-        .section-desc {
-          margin: 3px 0 0;
-          font-size: 12.5px;
+        .task-time {
+          font-size: 10.5px;
           color: #94a3b8;
         }
 
-        .live-status-pill {
-          display: inline-flex;
+        .quick-action-tile {
+          display: flex;
           align-items: center;
           gap: 7px;
-          background: rgba(16, 185, 129, 0.12);
-          border: 1px solid rgba(16, 185, 129, 0.3);
-          color: #34d399;
-          padding: 5px 12px;
-          border-radius: 99px;
-          font-size: 11.5px;
-          font-weight: 700;
-        }
-
-        .live-dot {
-          width: 7px;
-          height: 7px;
-          border-radius: 50%;
-          background: #10b981;
-          box-shadow: 0 0 8px #10b981;
-        }
-
-        .modules-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 18px;
-        }
-
-        .module-card {
-          background: #111726;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px;
-          padding: 22px;
+          padding: 9px 11px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 7px;
+          font-size: 12px;
+          font-weight: 500;
+          color: #cbd5e1;
           cursor: pointer;
-          display: flex;
-          flex-direction: column;
-          justifyContent: space-between;
-          transition: all 0.2s ease;
+          transition: all 0.15s ease;
         }
-
-        .module-card:hover {
-          transform: translateY(-3px);
-          border-color: rgba(99, 102, 241, 0.4);
-          box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
-        }
-
-        .module-top {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 14px;
-        }
-
-        .module-icon-box {
-          width: 42px;
-          height: 42px;
-          border-radius: 12px;
-          border: 1px solid transparent;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .module-name {
-          margin: 0 0 6px;
-          font-size: 15.5px;
-          font-weight: 700;
+        .quick-action-tile:hover {
+          background: rgba(255, 255, 255, 0.07);
           color: #ffffff;
         }
 
-        .module-desc {
-          margin: 0;
-          font-size: 12.5px;
+        .activity-row {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          padding: 6px 0;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .activity-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #818cf8;
+          margin-top: 5px;
+          flex-shrink: 0;
+        }
+        .activity-text {
+          font-size: 11.5px;
+          color: #e2e8f0;
+          line-height: 1.4;
+        }
+        .activity-time {
+          font-size: 10px;
           color: #94a3b8;
-          line-height: 1.5;
-        }
-
-        .module-action-row {
-          margin-top: 18px;
-          padding-top: 12px;
-          border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .module-link-text {
-          font-size: 12px;
-          color: #818cf8;
-          font-weight: 600;
         }
       `}</style>
     </AppLayout>

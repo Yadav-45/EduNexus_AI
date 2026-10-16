@@ -5,115 +5,133 @@ import { API_BASE_URL, getAuthToken } from "../api/config";
 import {
   BookOpen,
   FileCheck2,
-  Bot,
-  Sparkles,
-  ArrowRight,
-  TrendingUp,
+  CalendarCheck,
   Award,
   Clock,
   CheckCircle2,
-  Flame,
+  AlertCircle,
+  ArrowRight,
+  ExternalLink,
+  GraduationCap,
   Calendar,
   CreditCard,
-  QrCode,
-  Send,
-  HelpCircle,
-  ChevronRight,
+  Bell,
+  Sparkles,
+  Bot,
   Check,
-  ShieldCheck,
-  RefreshCw,
 } from "lucide-react";
-
-const AI_TUTOR_STORAGE_KEY = "edunexus_ai_tutor_messages";
 
 export default function Dashboard() {
   const navigate = useNavigate();
 
   const [studentName, setStudentName] = useState("Aarav Sharma");
-  const [studentEmail, setStudentEmail] = useState("aarav.sharma@edunexus.edu.np");
-  const [studentRole, setStudentRole] = useState("कक्षा १० (SEE Candidate) · Section A");
-  const [courseProgress, setCourseProgress] = useState(68);
+  const [studentEmail, setStudentEmail] = useState("aarav.sharma@edunexus.edu");
+  const [courseProgress, setCourseProgress] = useState(72);
   const [assignments, setAssignments] = useState([
     {
       id: 1,
-      title: "अनिवार्य गणित: वृत्त र चक्रीय चतुर्भुज (Circles Theorem 4)",
+      title: "Circles & Cyclic Quadrilaterals (Theorem 4 & 5 Proofs)",
       course: "Compulsory Mathematics",
       completed: true,
-      dueDate: "२०८१ आश्विन २५",
+      dueDate: "Oct 18, 2026",
     },
     {
       id: 2,
-      title: "विज्ञान तथा प्रविधि: वंशाणु तथा मेन्डेलको नियम (Genetics)",
+      title: "Mendelian Genetics & Heredity Problem Sets",
       course: "Science & Technology",
       completed: false,
-      dueDate: "२०८१ आश्विन २८",
+      dueDate: "Oct 20, 2026",
     },
     {
       id: 3,
       title: "Python Data Structures: Lists & Dictionaries Exercise",
       course: "Computer Science",
       completed: true,
-      dueDate: "२०८१ आश्विन ३०",
+      dueDate: "Oct 21, 2026",
     },
     {
       id: 4,
-      title: "सामाजिक अध्ययन: नेपालको संघीयता र प्रदेश संरचना",
+      title: "Constitutional Governance & Federal Structure Case Study",
       course: "Social Studies",
       completed: false,
-      dueDate: "२०८१ कात्तिक २",
+      dueDate: "Oct 23, 2026",
     },
   ]);
-  const [totalAssignments, setTotalAssignments] = useState(4);
-  const [assignmentsCompleted, setAssignmentsCompleted] = useState(2);
-  const [aiQuestions, setAiQuestions] = useState(14);
-  const [loadingProfile, setLoadingProfile] = useState(false);
 
-  // Routine & Interactive state
-  const [showFullRoutine, setShowFullRoutine] = useState(false);
-  const [aiQuery, setAiQuery] = useState("");
-  const [aiAnswer, setAiAnswer] = useState("");
-  const [aiAnswering, setAiAnswering] = useState(false);
-  const [aiLanguageMode, setAiLanguageMode] = useState("NEP"); // "NEP" | "ENG"
+  const todayClasses = [
+    {
+      period: "Period 1",
+      time: "09:00 – 09:45 AM",
+      subject: "Compulsory Mathematics",
+      teacher: "Er. Suresh Adhikari",
+      room: "Room 204",
+      status: "Done",
+    },
+    {
+      period: "Period 2",
+      time: "09:45 – 10:30 AM",
+      subject: "Science & Technology",
+      teacher: "Dr. Bikas Pant",
+      room: "Science Lab 2",
+      status: "Done",
+    },
+    {
+      period: "Period 3",
+      time: "10:30 – 11:15 AM",
+      subject: "Computer Science",
+      teacher: "Tr. Anish Thapa",
+      room: "IT Lab",
+      status: "In Progress",
+    },
+    {
+      period: "Break",
+      time: "11:15 – 11:55 AM",
+      subject: "Lunch / Refreshment Break",
+      teacher: "Campus Cafeteria",
+      room: "Cafeteria",
+      status: "Upcoming",
+    },
+    {
+      period: "Period 4",
+      time: "11:55 – 12:40 PM",
+      subject: "English Literature",
+      teacher: "Ms. Sunita Karki",
+      room: "Room 101",
+      status: "Upcoming",
+    },
+    {
+      period: "Period 5",
+      time: "12:40 – 01:25 PM",
+      subject: "Social Studies",
+      teacher: "Mrs. Ranjita Shrestha",
+      room: "Room 101",
+      status: "Upcoming",
+    },
+  ];
 
-  const loadDashboardData = useCallback(async () => {
+  const loadProfile = useCallback(async () => {
     const token = getAuthToken();
     if (!token) return;
 
-    // Load Profile
     try {
       const response = await fetch(`${API_BASE_URL}/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (response.ok) {
         const profile = await response.json();
         if (profile.full_name?.trim()) setStudentName(profile.full_name.trim());
         if (profile.email?.trim()) setStudentEmail(profile.email.trim());
       }
     } catch (err) {
-      console.warn("Using local profile data:", err);
-    }
-
-    // Load Course Progress
-    try {
-      const response = await fetch(`${API_BASE_URL}/courses/1/progress`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.progress) setCourseProgress(Math.round(data.progress));
-      }
-    } catch (err) {
       // keep fallback
     }
 
-    // Load Assignments
     try {
-      const response = await fetch(`${API_BASE_URL}/assignments`);
-      if (response.ok) {
-        const data = await response.json();
+      const aRes = await fetch(`${API_BASE_URL}/assignments`);
+      if (aRes.ok) {
+        const data = await aRes.json();
         if (Array.isArray(data) && data.length > 0) {
           setAssignments(data);
-          setTotalAssignments(data.length);
-          setAssignmentsCompleted(data.filter((a) => a.completed).length);
         }
       }
     } catch (err) {
@@ -122,1164 +140,682 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    loadDashboardData();
-  }, [loadDashboardData]);
-
-  // AI Doubt Solver handler
-  const handleSolveDoubt = (presetQuery) => {
-    const query = presetQuery || aiQuery;
-    if (!query.trim()) return;
-
-    setAiAnswering(true);
-    setAiQuery(query);
-
-    setTimeout(() => {
-      let nep = "";
-      let eng = "";
-
-      const lower = query.toLowerCase();
-      if (lower.includes("पाइथागोरस") || lower.includes("pythagoras")) {
-        nep =
-          "**पाइथागोरस साध्य (Pythagoras Theorem):**\nकुनै पनि समकोणी त्रिभुजमा, कर्णको वर्ग (h²) अन्य दुई भुजाहरूको वर्गको योगफलसँग बराबर हुन्छ।\nसूत्र: **h² = p² + b²**\nजस्तै: लम्ब (p) = ३ से.मी. र आधार (b) = ४ से.मी. भएमा, कर्ण (h) = √(९ + १६) = ५ से.मी. हुन्छ।";
-        eng =
-          "**Pythagorean Theorem:**\nIn a right-angled triangle, the square of the hypotenuse is equal to the sum of the squares of the other two sides.\nFormula: **h² = p² + b²**\nExample: If p = 3 and b = 4, then h = √(9 + 16) = 5 cm.";
-      } else if (lower.includes("photosynthesis") || lower.includes("प्रकाश संश्लेषण")) {
-        nep =
-          "**प्रकाश संश्लेषण (Photosynthesis):**\nहरिया वनस्पतिहरूले सूर्यको प्रकाश, पानी (H₂O) र कार्बनडाइअक्साइड (CO₂) को मद्दतले क्लोरोफिलमा ग्लुकोज (खाना) र अक्सिजन (O₂) बनाउने प्रक्रियालाई प्रकाश संश्लेषण भनिन्छ।\nसमीकरण: **6CO₂ + 6H₂O + घामको किरण → C₆H₁₂O₆ + 6O₂**";
-        eng =
-          "**Photosynthesis:**\nThe biological process by which green plants synthesize nutrients using sunlight, water, and carbon dioxide in the presence of chlorophyll.\nEquation: **6CO₂ + 6H₂O + Sunlight → C₆H₁₂O₆ + 6O₂**";
-      } else if (lower.includes("python") || lower.includes("loop") || lower.includes("loop")) {
-        nep =
-          "**पाइथन लुप (Python Loops):**\nकुनै पनि कोडलाई पटक–पटक दोहोर्‍याएर चलाउन `for` वा `while` लुप प्रयोग गरिन्छ।\nउदा: `for i in range(1, 6): print(i)` ले १ देखि ५ सम्मका अङ्कहरू प्रिन्ट गर्दछ।";
-        eng =
-          "**Python Loops:**\nLoops are used to iterate over a sequence of elements.\nExample: `for i in range(1, 6): print(i)` prints numbers from 1 to 5.";
-      } else {
-        nep = `**एआई शिक्षक उत्तर:**\n"${query}" सम्बन्धी जानकारी: यो CDC पाठ्यक्रम विकास केन्द्र कक्षा १० को महत्वपूर्ण पाठ्यांश हो। विस्तृत अध्ययनको लागि तपाईंको AI Neural Tutor मोड्युलमा थप अभ्यास प्रश्नहरू उपलब्ध छन्।`;
-        eng = `**AI Neural Tutor Response:**\nRegarding "${query}": This is aligned with the CDC Class 10 Board Curriculum. You can explore deep interactive problem sets in the full AI Tutor module.`;
-      }
-
-      setAiAnswer(aiLanguageMode === "NEP" ? nep : eng);
-      setAiAnswering(false);
-      setAiQuestions((prev) => prev + 1);
-    }, 800);
-  };
-
-  const initials =
-    studentName
-      .split(" ")
-      .filter(Boolean)
-      .map((w) => w[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() || "AS";
+    loadProfile();
+  }, [loadProfile]);
 
   return (
     <AppLayout
-      title={`Welcome, ${studentName} 👋`}
-      subtitle={`Class 10 (SEE Board) · CDC National Curriculum — Academic Year 2081 B.S.`}
+      title={`Welcome back, ${studentName}`}
+      subtitle="Class 10 (Section A) • Roll #14 • Academic Session 2025–26"
+      actions={
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate("/ai-tutor")}
+            className="student-top-action-btn"
+          >
+            <Bot size={15} />
+            <span>AI Tutor</span>
+          </button>
+          <button
+            onClick={() => navigate("/assignments")}
+            className="student-top-action-btn secondary"
+          >
+            <FileCheck2 size={15} />
+            <span>Submit Work</span>
+          </button>
+        </div>
+      }
     >
-      <div className="student-dashboard-wrap">
+      <div className="student-container">
         {/* ============================================================
-            HERO PROFILE & NEPAL ACADEMIC BANNER
+            ROW 1: 4 CLEAR STUDENT METRICS (SCAN IN 20 SECONDS)
             ============================================================ */}
-        <section className="profile-hero-banner">
-          <div className="banner-glow-gradient" />
-          <div className="banner-content">
-            <div className="banner-avatar-box">
-              <span className="banner-avatar-initials">{initials}</span>
-              <span className="online-badge" />
-            </div>
-
-            <div className="banner-user-info">
-              <div className="banner-name-row">
-                <h2 className="banner-name">{studentName}</h2>
-                <span className="banner-role-tag">{studentRole}</span>
-                <span className="banner-nepal-tag">वि.सं. २०८१ · CDC NEB</span>
-              </div>
-              <p className="banner-email">{studentEmail}</p>
-              <div className="streak-row">
-                <div className="streak-indicator">
-                  <Flame size={15} className="text-amber" />
-                  <span>७-दिने अध्ययन निरन्तरता (7-Day Streak) · विद्वान (Scholar Rank)</span>
-                </div>
-                <div className="see-countdown-badge">
-                  <Award size={14} />
-                  <span>SEE बोर्ड परीक्षा: १३८ दिन बाँकी</span>
-                </div>
+        <section className="student-stats-grid">
+          <div className="student-stat-card">
+            <div className="stat-card-top">
+              <span className="stat-label">Academic Attendance</span>
+              <div className="stat-icon-box text-emerald-400 bg-emerald-500/10">
+                <CalendarCheck size={18} />
               </div>
             </div>
-
-            <div className="banner-actions">
-              <button
-                onClick={() => navigate("/ai-tutor")}
-                className="banner-ai-btn"
-              >
-                <Bot size={16} />
-                <span>एआई शिक्षकसँग सोध्नुहोस्</span>
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* ============================================================
-            LIVE BELL SCHEDULE & TODAY'S PERIOD RADAR
-            ============================================================ */}
-        <section className="bell-routine-card">
-          <div className="bell-routine-header">
-            <div className="bell-left">
-              <div className="bell-pulse-dot" />
-              <div>
-                <span className="bell-title-sub">दैनिक घण्टी तालिका (TODAY'S CLASS SCHEDULE)</span>
-                <h3 className="bell-current-period">
-                  Period 4: 12:15 PM – 1:00 PM · अनिवार्य गणित (Compulsory Mathematics)
-                </h3>
-              </div>
-            </div>
-
-            <div className="bell-right">
-              <div className="bell-countdown-box">
-                <Clock size={15} className="text-cyan" />
-                <span>घण्टी बज्न बाँकी: <strong>16m 40s</strong> (Tiffin Break सम्म)</span>
-              </div>
-              <button
-                onClick={() => setShowFullRoutine(!showFullRoutine)}
-                className="routine-toggle-btn"
-              >
-                <span>{showFullRoutine ? "रुटिन बन्द गर्नुहोस्" : "पूरा रुटिन हेर्नुहोस्"}</span>
-                <ChevronRight size={14} />
-              </button>
+            <div className="stat-val">96.4%</div>
+            <div className="stat-sub text-emerald-400">
+              132 Days Present <span className="text-slate-400">• 5 Absent</span>
             </div>
           </div>
 
-          {/* Collapsible Routine Grid */}
-          {showFullRoutine && (
-            <div className="routine-full-grid">
-              {[
-                { time: "10:00 - 10:45 AM", name: "Period 1: अनिवार्य नेपाली", teacher: "शिक्षक: केशव दाहाल", room: "Room 101" },
-                { time: "10:45 - 11:30 AM", name: "Period 2: Compulsory English", teacher: "Tr: Sunita Karki", room: "Room 101" },
-                { time: "11:30 - 12:15 PM", name: "Period 3: विज्ञान तथा प्रविधि", teacher: "शिक्षक: डा. विकास पन्त", room: "Science Lab" },
-                { time: "12:15 - 01:00 PM", name: "Period 4 (वर्तमान): अनिवार्य गणित", teacher: "शिक्षक: ई. सुरेश अधिकारी", room: "Room 204", current: true },
-                { time: "01:00 - 01:40 PM", name: "Tiffin / Lunch Break (४० मिनेट)", teacher: "खाजा समय", room: "Cafeteria" },
-                { time: "01:40 - 02:25 PM", name: "Period 5: सामाजिक अध्ययन", teacher: "शिक्षक: रञ्जिता श्रेष्ठ", room: "Room 101" },
-                { time: "02:25 - 03:10 PM", name: "Period 6: Computer Science", teacher: "Tr: Anish Thapa", room: "IT Lab" },
-              ].map((p, i) => (
-                <div
-                  key={i}
-                  className={`routine-item-box ${p.current ? "current-box" : ""}`}
-                >
-                  <span className="routine-time">{p.time}</span>
-                  <strong className="routine-name">{p.name}</strong>
-                  <span className="routine-meta">{p.teacher} · {p.room}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* ============================================================
-            STATS KPI ROW: Course Progress, SEE Target, Fee Clearance
-            ============================================================ */}
-        <section className="dashboard-stats-grid">
-          {/* Box 1: Course Mastery */}
-          <div className="stat-box">
-            <div className="stat-top">
-              <span className="stat-title">पाठ्यक्रम प्रगति (Curriculum)</span>
-              <div className="stat-icon-wrap icon-cyan">
-                <BookOpen size={18} />
-              </div>
-            </div>
-            <div className="stat-metric">{courseProgress}%</div>
-            <div className="stat-progress-bar">
-              <div
-                className="stat-progress-fill fill-cyan"
-                style={{ width: `${courseProgress}%` }}
-              />
-            </div>
-            <span className="stat-foot">कम्प्युटर, गणित र विज्ञान संयुक्त प्रगति</span>
-          </div>
-
-          {/* Box 2: SEE 4.0 GPA Target */}
-          <div className="stat-box">
-            <div className="stat-top">
-              <span className="stat-title">लक्ष्य GPA (SEE Target)</span>
-              <div className="stat-icon-wrap icon-amber">
+          <div className="student-stat-card">
+            <div className="stat-card-top">
+              <span className="stat-label">Current Academic Standing</span>
+              <div className="stat-icon-box text-amber-400 bg-amber-500/10">
                 <Award size={18} />
               </div>
             </div>
-            <div className="stat-metric">
-              ३.८५ <span className="stat-metric-sub">/ ४.०० (A+)</span>
+            <div className="stat-val">3.85 <span className="text-sm font-normal text-slate-400">/ 4.00</span></div>
+            <div className="stat-sub text-amber-400">
+              Grade: Distinction (A+) <span className="text-slate-400">• Top 5%</span>
             </div>
-            <div className="stat-progress-bar">
-              <div
-                className="stat-progress-fill fill-amber"
-                style={{ width: "96%" }}
-              />
-            </div>
-            <span className="stat-foot">प्रथम त्रैमासिक स्कोर: ३.७२ GPA (Distinction)</span>
           </div>
 
-          {/* Box 3: Fee Clearance Status */}
-          <div className="stat-box">
-            <div className="stat-top">
-              <span className="stat-title">शुल्क स्थिति (eSewa / Khalti)</span>
-              <div className="stat-icon-wrap icon-emerald">
+          <div className="student-stat-card">
+            <div className="stat-card-top">
+              <span className="stat-label">Assignments Due</span>
+              <div className="stat-icon-box text-cyan-400 bg-cyan-500/10">
+                <FileCheck2 size={18} />
+              </div>
+            </div>
+            <div className="stat-val">2 Pending</div>
+            <div className="stat-sub text-cyan-400">
+              4 Completed this week <span className="text-slate-400">• On Track</span>
+            </div>
+          </div>
+
+          <div className="student-stat-card">
+            <div className="stat-card-top">
+              <span className="stat-label">Tuition & Fee Status</span>
+              <div className="stat-icon-box text-indigo-400 bg-indigo-500/10">
                 <CreditCard size={18} />
               </div>
             </div>
-            <div className="stat-metric" style={{ color: "#34d399", fontSize: "22px" }}>
-              शुल्क चुक्ता (Cleared)
+            <div className="stat-val text-emerald-400 text-xl font-bold pt-1">Cleared</div>
+            <div className="stat-sub text-slate-400">
+              Receipt #REC-2081-8942 <span className="text-emerald-400">• No Dues</span>
             </div>
-            <div className="stat-progress-bar">
-              <div
-                className="stat-progress-fill fill-emerald"
-                style={{ width: "100%" }}
-              />
-            </div>
-            <span className="stat-foot">
-              बक्यौता: रू ०.०० · रसिद #REC-2081-8942
-            </span>
           </div>
         </section>
 
         {/* ============================================================
-            INSTANT BILINGUAL AI DOUBT SOLVER WIDGET
+            ROW 2: TWO-COLUMN MAIN WORKSPACE (NO ENDLESS SCROLL)
             ============================================================ */}
-        <section className="content-card ai-solver-card">
-          <div className="card-topbar">
-            <div className="card-heading-group">
-              <div className="card-icon-pill icon-bot">
-                <Bot size={17} />
-              </div>
-              <div>
-                <h3 className="card-main-title">तत्काल एआई अध्ययन सहयोगी (Instant Bilingual AI Doubt Solver)</h3>
-                <span className="card-sub-hint">कुनै पनि गणित, विज्ञान वा प्रोग्रामिङ सम्बन्धी प्रश्न नेपाली वा अंग्रेजीमा सोध्नुहोस्</span>
-              </div>
-            </div>
-
-            <div className="lang-toggle-pill">
-              <button
-                onClick={() => setAiLanguageMode("NEP")}
-                className={`lang-btn ${aiLanguageMode === "NEP" ? "active" : ""}`}
-              >
-                नेपाली
-              </button>
-              <button
-                onClick={() => setAiLanguageMode("ENG")}
-                className={`lang-btn ${aiLanguageMode === "ENG" ? "active" : ""}`}
-              >
-                English
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Prompt Chips */}
-          <div className="quick-chips-row">
-            {[
-              "पाइथागोरस साध्य नेपालीमा बुझाउनुहोस्",
-              "Photosynthesis (प्रकाश संश्लेषण) प्रक्रिया",
-              "Python Loops उदाहरण सहित",
-            ].map((chip) => (
-              <button
-                key={chip}
-                onClick={() => handleSolveDoubt(chip)}
-                className="quick-chip-btn"
-              >
-                <Sparkles size={12} className="text-cyan" />
-                <span>{chip}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* AI Response Display */}
-          {aiAnswer && (
-            <div className="ai-solution-box">
-              <div className="ai-solution-header">
-                <div className="ai-header-tag">
-                  <CheckCircle2 size={14} className="text-emerald" />
-                  <span>प्रमाणित एआई व्याख्या (CDC Syllabus Aligned)</span>
+        <div className="student-columns-layout">
+          {/* ==================== LEFT COLUMN (TIMETABLE & COURSES - 65%) ==================== */}
+          <div className="student-main-col">
+            {/* TODAY'S CLASS SCHEDULE */}
+            <div className="student-card">
+              <div className="card-top-header">
+                <div>
+                  <h3 className="card-header-title">Today's Class Schedule</h3>
+                  <p className="card-header-desc">
+                    Daily timetable for Class 10-A • 6 Periods scheduled today
+                  </p>
                 </div>
-                <button
-                  onClick={() => setAiAnswer("")}
-                  className="close-ai-btn"
-                >
-                  बन्द गर्नुहोस्
-                </button>
-              </div>
-              <div className="ai-solution-text">{aiAnswer}</div>
-            </div>
-          )}
-
-          {/* Input Bar */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSolveDoubt();
-            }}
-            className="ai-solver-form"
-          >
-            <input
-              type="text"
-              placeholder={
-                aiLanguageMode === "NEP"
-                  ? "जस्तै: ओहमको नियम के हो? वा वृत्तको क्षेत्रफल सूत्र..."
-                  : "Type your academic question here (Math, Science, Python)..."
-              }
-              value={aiQuery}
-              onChange={(e) => setAiQuery(e.target.value)}
-              className="ai-solver-input"
-            />
-            <button
-              type="submit"
-              disabled={aiAnswering || !aiQuery.trim()}
-              className="ai-solver-btn"
-            >
-              {aiAnswering ? (
-                <>
-                  <RefreshCw size={14} className="spin-icon" />
-                  <span>खोज्दैछ...</span>
-                </>
-              ) : (
-                <>
-                  <Send size={14} />
-                  <span>उत्तर पाउनुहोस्</span>
-                </>
-              )}
-            </button>
-          </form>
-        </section>
-
-        {/* ============================================================
-            MAIN 2-COLUMN VIEW: Active Course & CDC Assignments
-            ============================================================ */}
-        <section className="dashboard-columns-grid">
-          {/* Active Course Card */}
-          <div className="content-card">
-            <div className="card-topbar">
-              <div className="card-heading-group">
-                <div className="card-icon-pill">
-                  <BookOpen size={16} />
+                <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>Period 3 Active</span>
                 </div>
-                <h3 className="card-main-title">सक्रिय पाठ्यक्रम (Enrolled Curriculum)</h3>
-              </div>
-              <button
-                onClick={() => navigate("/courses")}
-                className="card-text-action"
-              >
-                <span>सबै हेर्नुहोस्</span>
-                <ArrowRight size={14} />
-              </button>
-            </div>
-
-            <div className="course-featured-item">
-              <div className="course-item-header">
-                <div className="course-tag">LEVEL 1 · ACTIVE</div>
-                <h4 className="course-item-title">
-                  कक्षा १०: कम्प्युटर विज्ञान तथा Python Fundamentals
-                </h4>
-                <p className="course-item-desc">
-                  Syntax, data structures, loops, functions, and CDC SEE Board computational problem solving.
-                </p>
               </div>
 
-              <div className="course-progress-section">
-                <div className="progress-labels">
-                  <span>पाठ्यक्रम प्रगति (Module Progress)</span>
-                  <strong>{courseProgress}%</strong>
-                </div>
-                <div className="course-bar-outer">
+              <div className="space-y-2 mt-4">
+                {todayClasses.map((item, idx) => (
                   <div
-                    className="course-bar-inner"
-                    style={{ width: `${courseProgress}%` }}
-                  />
-                </div>
-              </div>
-
-              <button
-                onClick={() => navigate("/learning")}
-                className="resume-learning-btn"
-              >
-                <span>पाठ सुरु गर्नुहोस् (Continue Lesson)</span>
-                <ArrowRight size={16} />
-              </button>
-            </div>
-          </div>
-
-          {/* Assignments Checklist Card */}
-          <div className="content-card">
-            <div className="card-topbar">
-              <div className="card-heading-group">
-                <div className="card-icon-pill">
-                  <FileCheck2 size={16} />
-                </div>
-                <h3 className="card-main-title">गृहकार्य तथा अभ्यास (CDC Assignments)</h3>
-              </div>
-              <button
-                onClick={() => navigate("/assignments")}
-                className="card-text-action"
-              >
-                <span>सबै हेर्नुहोस्</span>
-                <ArrowRight size={14} />
-              </button>
-            </div>
-
-            <div className="assignments-list">
-              {assignments.slice(0, 4).map((item) => (
-                <div key={item.id} className="assignment-row">
-                  <div className="assignment-left">
-                    <div
-                      className={`check-icon-circle ${
-                        item.completed ? "completed" : "pending"
-                      }`}
-                    >
-                      <CheckCircle2 size={16} />
+                    key={idx}
+                    className={`schedule-row ${
+                      item.status === "In Progress"
+                        ? "active-row"
+                        : item.status === "Done"
+                        ? "done-row"
+                        : ""
+                    }`}
+                  >
+                    <div className="schedule-left">
+                      <span className="schedule-period">{item.period}</span>
+                      <span className="schedule-time">{item.time}</span>
                     </div>
-                    <div>
-                      <h5 className="assignment-title">{item.title}</h5>
-                      <span className="assignment-meta">
-                        {item.course} · बुझाउने म्याद: {item.dueDate || "Due Soon"}
+
+                    <div className="schedule-middle">
+                      <h4 className="schedule-subject">{item.subject}</h4>
+                      <span className="schedule-teacher">
+                        {item.teacher} • {item.room}
+                      </span>
+                    </div>
+
+                    <div className="schedule-right">
+                      <span
+                        className={`schedule-badge ${
+                          item.status === "In Progress"
+                            ? "badge-active"
+                            : item.status === "Done"
+                            ? "badge-done"
+                            : "badge-upcoming"
+                        }`}
+                      >
+                        {item.status}
                       </span>
                     </div>
                   </div>
+                ))}
+              </div>
+            </div>
 
-                  <span
-                    className={`assignment-status-tag ${
-                      item.completed ? "status-done" : "status-todo"
-                    }`}
-                  >
-                    {item.completed ? "बुझाइएको (Submitted)" : "बाँकी (Pending)"}
-                  </span>
+            {/* ENROLLED COURSES */}
+            <div className="student-card mt-6">
+              <div className="card-top-header">
+                <div>
+                  <h3 className="card-header-title">Enrolled Academic Modules</h3>
+                  <p className="card-header-desc">
+                    National curriculum courses and completion rates
+                  </p>
                 </div>
-              ))}
+                <button
+                  onClick={() => navigate("/courses")}
+                  className="card-link"
+                >
+                  <span>All Courses</span>
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                <div className="course-box">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="course-cat">Core Curriculum</span>
+                      <h4 className="course-name">Computer Science & Python</h4>
+                    </div>
+                    <span className="course-pct text-indigo-400">78%</span>
+                  </div>
+                  <div className="course-bar">
+                    <div className="course-bar-fill bg-indigo-500" style={{ width: "78%" }} />
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-400 mt-3">
+                    <span>14 of 18 Topics Mastered</span>
+                    <button
+                      onClick={() => navigate("/learning")}
+                      className="text-indigo-400 font-semibold hover:underline"
+                    >
+                      Continue →
+                    </button>
+                  </div>
+                </div>
+
+                <div className="course-box">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="course-cat">Core Curriculum</span>
+                      <h4 className="course-name">Compulsory Mathematics</h4>
+                    </div>
+                    <span className="course-pct text-cyan-400">65%</span>
+                  </div>
+                  <div className="course-bar">
+                    <div className="course-bar-fill bg-cyan-500" style={{ width: "65%" }} />
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-400 mt-3">
+                    <span>12 of 18 Topics Mastered</span>
+                    <button
+                      onClick={() => navigate("/learning")}
+                      className="text-cyan-400 font-semibold hover:underline"
+                    >
+                      Continue →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ASSIGNMENTS CHECKLIST */}
+            <div className="student-card mt-6">
+              <div className="card-top-header">
+                <div>
+                  <h3 className="card-header-title">Assignments & Problem Sets</h3>
+                  <p className="card-header-desc">
+                    Upcoming homework submissions and graded tasks
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate("/assignments")}
+                  className="card-link"
+                >
+                  <span>Submit Task</span>
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+
+              <div className="space-y-2.5 mt-4">
+                {assignments.map((item) => (
+                  <div key={item.id} className="assignment-row">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`assign-check-circle ${
+                          item.completed ? "is-done" : "is-pending"
+                        }`}
+                      >
+                        {item.completed ? <Check size={13} /> : <Clock size={13} />}
+                      </div>
+                      <div>
+                        <h5 className="assign-title">{item.title}</h5>
+                        <span className="assign-course">
+                          {item.course} • Due: {item.dueDate}
+                        </span>
+                      </div>
+                    </div>
+
+                    <span
+                      className={`assign-tag ${
+                        item.completed ? "tag-completed" : "tag-pending"
+                      }`}
+                    >
+                      {item.completed ? "Submitted" : "Pending"}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </section>
+
+          {/* ==================== RIGHT COLUMN (ANNOUNCEMENTS & SHORTCUTS - 35%) ==================== */}
+          <div className="student-sidebar-col">
+            {/* QUICK AI TUTOR ACCESS */}
+            <div className="student-card bg-gradient-to-br from-indigo-950/40 via-slate-900 to-slate-950 border-indigo-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Bot size={18} className="text-indigo-400" />
+                <h3 className="card-header-title">Need Help With Homework?</h3>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                Your AI Subject Tutor can guide you through math proofs, science concepts, and code debugging step-by-step.
+              </p>
+              <button
+                onClick={() => navigate("/ai-tutor")}
+                className="w-full flex items-center justify-center gap-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-3 rounded-lg transition-all"
+              >
+                <Sparkles size={14} />
+                <span>Open AI Subject Tutor</span>
+              </button>
+            </div>
+
+            {/* SCHOOL ANNOUNCEMENTS */}
+            <div className="student-card mt-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Bell size={16} className="text-cyan-400" />
+                  <h3 className="card-header-title">School Notices</h3>
+                </div>
+                <button
+                  onClick={() => navigate("/communication")}
+                  className="card-link"
+                >
+                  <span>All</span>
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div className="notice-item">
+                  <span className="notice-date">Oct 16, 2026 • Academic</span>
+                  <h5 className="notice-title">
+                    Mid-Term Examination Routine Published
+                  </h5>
+                  <p className="notice-snippet">
+                    Exams begin on Oct 24. Collect admission admit cards from your class teacher.
+                  </p>
+                </div>
+                <div className="notice-item">
+                  <span className="notice-date">Oct 14, 2026 • Library</span>
+                  <h5 className="notice-title">
+                    Digital Textbook & Library Circulation
+                  </h5>
+                  <p className="notice-snippet">
+                    Term 2 reference books available for online access through the student portal.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* QUICK PORTALS */}
+            <div className="student-card mt-6">
+              <h3 className="card-header-title mb-2">Academic Links</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => navigate("/courses")}
+                  className="shortcut-tile"
+                >
+                  <BookOpen size={16} className="text-cyan-400" />
+                  <span>My Courses</span>
+                </button>
+                <button
+                  onClick={() => navigate("/assignments")}
+                  className="shortcut-tile"
+                >
+                  <FileCheck2 size={16} className="text-emerald-400" />
+                  <span>Homework</span>
+                </button>
+                <button
+                  onClick={() => navigate("/academic/exam-results")}
+                  className="shortcut-tile"
+                >
+                  <Award size={16} className="text-amber-400" />
+                  <span>Report Cards</span>
+                </button>
+                <button
+                  onClick={() => navigate("/attendance")}
+                  className="shortcut-tile"
+                >
+                  <CalendarCheck size={16} className="text-indigo-400" />
+                  <span>Attendance</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* COMPONENT STYLES */}
       <style>{`
-        .student-dashboard-wrap {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
+        .student-container {
           max-width: 1360px;
           margin: 0 auto;
-        }
-
-        .profile-hero-banner {
-          background: linear-gradient(135deg, #111726 0%, #0d121f 100%);
-          border: 1px solid rgba(255, 255, 255, 0.09);
-          border-radius: 20px;
-          padding: 26px 30px;
-          position: relative;
-          overflow: hidden;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        }
-
-        .banner-glow-gradient {
-          position: absolute;
-          width: 320px;
-          height: 320px;
-          top: -100px;
-          right: -50px;
-          background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, transparent 70%);
-          filter: blur(40px);
-          pointer-events: none;
-        }
-
-        .banner-content {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 24px;
-          position: relative;
-          z-index: 2;
-        }
-
-        .banner-avatar-box {
-          position: relative;
-        }
-
-        .banner-avatar-initials {
-          width: 68px;
-          height: 68px;
-          border-radius: 18px;
-          background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
-          color: #ffffff;
-          font-family: 'Outfit', sans-serif;
-          font-size: 24px;
-          font-weight: 800;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
-          /* Ensure it renders as a block-level flex container */
-          flex-shrink: 0;
-        }
-
-        .online-badge {
-          position: absolute;
-          bottom: -2px;
-          right: -2px;
-          width: 14px;
-          height: 14px;
-          border-radius: 50%;
-          background: #10b981;
-          border: 3px solid #0d121f;
-        }
-
-        .banner-user-info {
-          flex: 1;
           display: flex;
           flex-direction: column;
-          gap: 6px;
-        }
-
-        .banner-name-row {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          flex-wrap: wrap;
-        }
-
-        .banner-name {
-          font-family: 'Outfit', sans-serif;
-          font-size: 24px;
-          font-weight: 700;
-          color: #ffffff;
-          margin: 0;
-        }
-
-        .banner-role-tag {
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.05em;
-          background: rgba(99, 102, 241, 0.15);
-          color: #818cf8;
-          border: 1px solid rgba(99, 102, 241, 0.3);
-          padding: 3px 8px;
-          border-radius: 6px;
-        }
-
-        .banner-nepal-tag {
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.04em;
-          background: rgba(16, 185, 129, 0.15);
-          color: #34d399;
-          border: 1px solid rgba(16, 185, 129, 0.3);
-          padding: 3px 8px;
-          border-radius: 6px;
-        }
-
-        .banner-email {
-          font-size: 13px;
-          color: #94a3b8;
-          margin: 0;
-        }
-
-        .streak-row {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          flex-wrap: wrap;
-          margin-top: 4px;
-        }
-
-        .streak-indicator {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 12px;
-          color: #f59e0b;
-          font-weight: 600;
-        }
-
-        .see-countdown-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          background: rgba(6, 182, 212, 0.12);
-          border: 1px solid rgba(6, 182, 212, 0.3);
-          color: #67e8f9;
-          padding: 3px 10px;
-          border-radius: 6px;
-          font-size: 11.5px;
-          font-weight: 700;
-        }
-
-        .banner-ai-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
-          color: #ffffff;
-          padding: 10px 18px;
-          border-radius: 12px;
-          border: none;
-          font-weight: 600;
-          font-size: 13px;
-          cursor: pointer;
-          box-shadow: 0 4px 15px rgba(79, 70, 229, 0.35);
-          transition: transform 0.15s ease;
-        }
-
-        .banner-ai-btn:hover {
-          transform: translateY(-2px);
-        }
-
-        /* Bell Routine Card */
-        .bell-routine-card {
-          background: rgba(17, 23, 38, 0.9);
-          border: 1px solid rgba(6, 182, 212, 0.25);
-          border-radius: 16px;
-          padding: 18px 24px;
-        }
-
-        .bell-routine-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 16px;
-        }
-
-        .bell-left {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .bell-pulse-dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          background: #06b6d4;
-          box-shadow: 0 0 12px #06b6d4;
-          animation: pulseDot 1.5s infinite;
-        }
-
-        @keyframes pulseDot {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.5; transform: scale(1.2); }
-        }
-
-        .bell-title-sub {
-          font-size: 11px;
-          font-weight: 800;
-          color: #06b6d4;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-        }
-
-        .bell-current-period {
-          margin: 3px 0 0;
-          font-size: 15px;
-          font-weight: 700;
-          color: #ffffff;
-        }
-
-        .bell-right {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          flex-wrap: wrap;
-        }
-
-        .bell-countdown-box {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 12.5px;
-          color: #cbd5e1;
-        }
-
-        .routine-toggle-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          color: #67e8f9;
-          padding: 6px 12px;
-          border-radius: 8px;
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-        }
-
-        .routine-full-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 10px;
-          margin-top: 16px;
-          padding-top: 16px;
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .routine-item-box {
-          padding: 10px 12px;
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          border-radius: 9px;
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
-
-        .routine-item-box.current-box {
-          background: rgba(6, 182, 212, 0.12);
-          border-color: rgba(6, 182, 212, 0.4);
-        }
-
-        .routine-time {
-          font-size: 10.5px;
-          color: #94a3b8;
-          font-weight: 700;
-        }
-
-        .routine-name {
-          font-size: 12px;
-          color: #ffffff;
-        }
-
-        .routine-meta {
-          font-size: 11px;
-          color: #64748b;
-        }
-
-        /* Stats Grid */
-        .dashboard-stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 18px;
-        }
-
-        .stat-box {
-          background: #111726;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px;
-          padding: 20px 24px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .stat-top {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .stat-title {
-          font-size: 12.5px;
-          color: #94a3b8;
-          font-weight: 600;
-        }
-
-        .stat-icon-wrap {
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .icon-cyan { background: rgba(6, 182, 212, 0.15); color: #06b6d4; }
-        .icon-indigo { background: rgba(99, 102, 241, 0.15); color: #6366f1; }
-        .icon-emerald { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-        .icon-amber { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
-        .icon-bot { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
-
-        .stat-metric {
-          font-family: 'Outfit', sans-serif;
-          font-size: 28px;
-          font-weight: 800;
-          color: #ffffff;
-        }
-
-        .stat-metric-sub {
-          font-size: 14px;
-          color: #64748b;
-          font-weight: 500;
-        }
-
-        .stat-progress-bar {
-          width: 100%;
-          height: 6px;
-          border-radius: 99px;
-          background: rgba(255, 255, 255, 0.07);
-          overflow: hidden;
-          margin-top: 4px;
-        }
-
-        .stat-progress-fill {
-          height: 100%;
-          border-radius: 99px;
-        }
-
-        .fill-cyan { background: #06b6d4; }
-        .fill-indigo { background: #6366f1; }
-        .fill-emerald { background: #10b981; }
-        .fill-amber { background: #f59e0b; }
-
-        .stat-foot {
-          font-size: 11.5px;
-          color: #64748b;
-          margin-top: 4px;
-        }
-
-        /* AI Solver Card */
-        .ai-solver-card {
-          background: #111726;
-          border: 1px solid rgba(168, 85, 247, 0.25);
-          border-radius: 16px;
-          padding: 22px 24px;
-        }
-
-        .card-topbar {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 16px;
-          flex-wrap: wrap;
-          gap: 12px;
-        }
-
-        .card-heading-group {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .card-icon-pill {
-          width: 34px;
-          height: 34px;
-          border-radius: 9px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(99, 102, 241, 0.15);
-          color: #818cf8;
-        }
-
-        .card-main-title {
-          margin: 0;
-          font-size: 16px;
-          font-weight: 700;
-          color: #ffffff;
-        }
-
-        .card-sub-hint {
-          font-size: 12px;
-          color: #94a3b8;
-        }
-
-        .lang-toggle-pill {
-          display: inline-flex;
-          background: rgba(255, 255, 255, 0.04);
-          padding: 3px;
-          border-radius: 8px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .lang-btn {
-          padding: 4px 10px;
-          border-radius: 6px;
-          border: none;
-          background: transparent;
-          color: #94a3b8;
-          font-size: 11px;
-          font-weight: 700;
-          cursor: pointer;
-        }
-
-        .lang-btn.active {
-          background: rgba(168, 85, 247, 0.25);
-          color: #d8b4fe;
-        }
-
-        .quick-chips-row {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-          margin-bottom: 14px;
-        }
-
-        .quick-chip-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
-          border-radius: 20px;
-          background: rgba(255, 255, 255, 0.035);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          color: #cbd5e1;
-          font-size: 11.5px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.15s ease;
-        }
-
-        .quick-chip-btn:hover {
-          background: rgba(255, 255, 255, 0.08);
-          color: #ffffff;
-        }
-
-        .ai-solution-box {
-          background: rgba(15, 23, 42, 0.8);
-          border: 1px solid rgba(16, 185, 129, 0.3);
-          border-radius: 12px;
-          padding: 14px 18px;
-          margin-bottom: 14px;
-        }
-
-        .ai-solution-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 8px;
-        }
-
-        .ai-header-tag {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 11.5px;
-          color: #34d399;
-          font-weight: 700;
-        }
-
-        .close-ai-btn {
-          background: transparent;
-          border: none;
-          color: #94a3b8;
-          font-size: 11px;
-          cursor: pointer;
-        }
-
-        .ai-solution-text {
-          font-size: 13px;
-          color: #ffffff;
-          line-height: 1.55;
-          white-space: pre-line;
-        }
-
-        .ai-solver-form {
-          display: flex;
-          gap: 8px;
-        }
-
-        .ai-solver-input {
-          flex: 1;
-          height: 44px;
-          border-radius: 10px;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: #ffffff;
-          padding: 0 16px;
-          font-size: 13px;
-          outline: none;
-        }
-
-        .ai-solver-input:focus {
-          border-color: #a855f7;
-        }
-
-        .ai-solver-btn {
-          padding: 0 20px;
-          border-radius: 10px;
-          background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-          color: #ffffff;
-          border: none;
-          font-size: 13px;
-          font-weight: 700;
-          cursor: pointer;
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        /* 2 Column Grid */
-        .dashboard-columns-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
           gap: 22px;
         }
 
-        .content-card {
-          background: #111726;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px;
-          padding: 22px 24px;
-        }
-
-        .card-text-action {
+        .student-top-action-btn {
           display: inline-flex;
           align-items: center;
-          gap: 5px;
-          background: transparent;
-          border: none;
-          color: #818cf8;
-          font-size: 12px;
+          gap: 6px;
+          font-size: 13px;
           font-weight: 600;
+          padding: 7px 13px;
+          border-radius: 8px;
+          background: #4f46e5;
+          color: #ffffff;
+          border: none;
           cursor: pointer;
         }
+        .student-top-action-btn:hover {
+          background: #4338ca;
+        }
+        .student-top-action-btn.secondary {
+          background: rgba(255, 255, 255, 0.08);
+          color: #e2e8f0;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .student-top-action-btn.secondary:hover {
+          background: rgba(255, 255, 255, 0.14);
+        }
 
-        .course-featured-item {
-          display: flex;
-          flex-direction: column;
+        .student-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
           gap: 16px;
         }
 
-        .course-tag {
-          font-size: 10.5px;
-          font-weight: 700;
-          letter-spacing: 0.05em;
-          color: #06b6d4;
-          margin-bottom: 6px;
-        }
-
-        .course-item-title {
-          margin: 0 0 6px;
-          font-size: 16px;
-          font-weight: 700;
-          color: #ffffff;
-        }
-
-        .course-item-desc {
-          margin: 0;
-          font-size: 13px;
-          color: #94a3b8;
-          line-height: 1.5;
-        }
-
-        .course-progress-section {
+        .student-stat-card {
+          background: #0f1523;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 12px;
+          padding: 16px 18px;
           display: flex;
           flex-direction: column;
           gap: 6px;
         }
 
-        .progress-labels {
+        .stat-card-top {
           display: flex;
+          align-items: center;
           justify-content: space-between;
+        }
+
+        .stat-label {
           font-size: 12px;
+          font-weight: 500;
+          color: #94a3b8;
+          text-transform: uppercase;
+          letter-spacing: 0.4px;
+        }
+
+        .stat-icon-box {
+          width: 30px;
+          height: 30px;
+          border-radius: 7px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .stat-val {
+          font-size: 24px;
+          font-weight: 700;
+          color: #f8fafc;
+        }
+
+        .stat-sub {
+          font-size: 11.5px;
+        }
+
+        .student-columns-layout {
+          display: grid;
+          grid-template-columns: 66% calc(34% - 20px);
+          gap: 20px;
+          align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+          .student-columns-layout {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        .student-card {
+          background: #0f1523;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 12px;
+          padding: 18px 20px;
+        }
+
+        .card-top-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .card-header-title {
+          font-size: 15px;
+          font-weight: 600;
+          color: #f1f5f9;
+        }
+
+        .card-header-desc {
+          font-size: 12px;
+          color: #94a3b8;
+          margin-top: 2px;
+        }
+
+        .card-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 12px;
+          color: #818cf8;
+          background: none;
+          border: none;
+          cursor: pointer;
+        }
+        .card-link:hover {
+          color: #a5b4fc;
+          text-decoration: underline;
+        }
+
+        .schedule-row {
+          display: grid;
+          grid-template-columns: 130px 1fr 90px;
+          align-items: center;
+          gap: 12px;
+          padding: 10px 12px;
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .schedule-row.active-row {
+          background: rgba(99, 102, 241, 0.08);
+          border-color: rgba(99, 102, 241, 0.3);
+        }
+        .schedule-row.done-row {
+          opacity: 0.7;
+        }
+
+        .schedule-period {
+          font-size: 12px;
+          font-weight: 700;
+          color: #e2e8f0;
+          display: block;
+        }
+        .schedule-time {
+          font-size: 11px;
           color: #94a3b8;
         }
 
-        .course-bar-outer {
+        .schedule-subject {
+          font-size: 13px;
+          font-weight: 600;
+          color: #f1f5f9;
+        }
+        .schedule-teacher {
+          font-size: 11px;
+          color: #94a3b8;
+        }
+
+        .schedule-badge {
+          display: inline-block;
+          font-size: 11px;
+          font-weight: 600;
+          padding: 2px 7px;
+          border-radius: 5px;
+          text-align: center;
+        }
+        .badge-active {
+          color: #34d399;
+          background: rgba(16, 185, 129, 0.15);
+        }
+        .badge-done {
+          color: #94a3b8;
+          background: rgba(148, 163, 184, 0.1);
+        }
+        .badge-upcoming {
+          color: #cbd5e1;
+          background: rgba(255, 255, 255, 0.06);
+        }
+
+        .course-box {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 10px;
+          padding: 14px;
+        }
+        .course-cat {
+          font-size: 10.5px;
+          color: #94a3b8;
+          text-transform: uppercase;
+        }
+        .course-name {
+          font-size: 13.5px;
+          font-weight: 600;
+          color: #f8fafc;
+          margin-top: 2px;
+        }
+        .course-pct {
+          font-size: 16px;
+          font-weight: 700;
+        }
+        .course-bar {
           width: 100%;
-          height: 7px;
-          border-radius: 99px;
+          height: 6px;
           background: rgba(255, 255, 255, 0.08);
+          border-radius: 99px;
+          margin-top: 10px;
           overflow: hidden;
         }
-
-        .course-bar-inner {
+        .course-bar-fill {
           height: 100%;
           border-radius: 99px;
-          background: linear-gradient(90deg, #06b6d4 0%, #6366f1 100%);
-        }
-
-        .resume-learning-btn {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          padding: 11px 18px;
-          border-radius: 10px;
-          background: rgba(99, 102, 241, 0.15);
-          border: 1px solid rgba(99, 102, 241, 0.35);
-          color: #a5b4fc;
-          font-weight: 600;
-          font-size: 13px;
-          cursor: pointer;
-          transition: background 0.15s ease;
-        }
-
-        .resume-learning-btn:hover {
-          background: rgba(99, 102, 241, 0.25);
-        }
-
-        /* Assignments list */
-        .assignments-list {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
         }
 
         .assignment-row {
           display: flex;
+          align-items: center;
           justify-content: space-between;
-          align-items: center;
-          padding: 12px 14px;
-          border-radius: 10px;
-          background: rgba(255, 255, 255, 0.025);
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          gap: 10px;
+          padding: 10px 12px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          border-radius: 8px;
         }
-
-        .assignment-left {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .check-icon-circle {
-          width: 28px;
-          height: 28px;
+        .assign-check-circle {
+          width: 22px;
+          height: 22px;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
         }
-
-        .check-icon-circle.completed {
-          background: rgba(16, 185, 129, 0.15);
-          color: #10b981;
-        }
-
-        .check-icon-circle.pending {
-          background: rgba(255, 255, 255, 0.05);
-          color: #64748b;
-        }
-
-        .assignment-title {
-          margin: 0 0 2px;
-          font-size: 13px;
-          font-weight: 600;
-          color: #ffffff;
-        }
-
-        .assignment-meta {
-          font-size: 11.5px;
-          color: #64748b;
-        }
-
-        .assignment-status-tag {
-          font-size: 11px;
-          font-weight: 700;
-          padding: 4px 8px;
-          border-radius: 6px;
-        }
-
-        .status-done {
+        .assign-check-circle.is-done {
           background: rgba(16, 185, 129, 0.15);
           color: #34d399;
         }
-
-        .status-todo {
+        .assign-check-circle.is-pending {
           background: rgba(245, 158, 11, 0.15);
           color: #fbbf24;
         }
-
-        .spin-icon {
-          animation: spin 1s linear infinite;
+        .assign-title {
+          font-size: 12.5px;
+          font-weight: 600;
+          color: #f1f5f9;
         }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        .assign-course {
+          font-size: 11px;
+          color: #94a3b8;
+        }
+        .assign-tag {
+          font-size: 11px;
+          font-weight: 600;
+          padding: 2px 7px;
+          border-radius: 5px;
+        }
+        .tag-completed {
+          color: #34d399;
+          background: rgba(16, 185, 129, 0.12);
+        }
+        .tag-pending {
+          color: #fbbf24;
+          background: rgba(245, 158, 11, 0.12);
+        }
+
+        .notice-item {
+          padding: 10px 12px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.04);
+          border-radius: 8px;
+        }
+        .notice-date {
+          font-size: 10.5px;
+          color: #94a3b8;
+        }
+        .notice-title {
+          font-size: 12.5px;
+          font-weight: 600;
+          color: #f1f5f9;
+          margin: 3px 0;
+        }
+        .notice-snippet {
+          font-size: 11.5px;
+          color: #94a3b8;
+          line-height: 1.4;
+        }
+
+        .shortcut-tile {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          padding: 10px 12px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 8px;
+          font-size: 12px;
+          font-weight: 500;
+          color: #cbd5e1;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+        .shortcut-tile:hover {
+          background: rgba(255, 255, 255, 0.07);
+          color: #ffffff;
         }
       `}</style>
     </AppLayout>

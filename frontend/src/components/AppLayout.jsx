@@ -18,27 +18,34 @@ export default function AppLayout({ children, title, subtitle, actions }) {
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
 
+  const todayFormatted = new Date().toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
   const notifications = [
     {
       id: 1,
-      tag: "अत्यावश्यक (URGENT)",
-      type: "danger",
-      text: "काठमाडौँ जिल्ला प्रशासन: भारी वर्षा सम्बन्धी पूर्वसूचना - हाइब्रिड कक्षा सञ्चालन।",
-      time: "आज बिहान ८:१५",
+      tag: "ACADEMIC",
+      type: "warning",
+      text: "Mid-Term Examination schedule has been released for Classes 6 through 12.",
+      time: "25m ago",
     },
     {
       id: 2,
-      tag: "परीक्षा (EXAM)",
-      type: "warning",
-      text: "कक्षा ११ र १२ को NEB दर्ता फारम तथा CDC आन्तरिक मूल्याङ्कन बुझाउने म्याद: कात्तिक १५ गते।",
-      time: "२ घण्टा अगाडि",
+      tag: "ADMIN",
+      type: "success",
+      text: "Monthly fee reconciliation completed: 94.2% collection rate achieved.",
+      time: "2h ago",
     },
     {
       id: 3,
-      tag: "चाडपर्व (FESTIVAL)",
-      type: "success",
-      text: "बडादशैं तथा तिहार बिदा आश्विन २८ देखि कात्तिक १४ सम्म हुनेछ।",
-      time: "हिजो",
+      tag: "FACULTY",
+      type: "danger",
+      text: "General Staff & Faculty meeting tomorrow morning at 08:30 AM in Conference Hall A.",
+      time: "Yesterday",
     },
   ];
 
@@ -64,7 +71,7 @@ export default function AppLayout({ children, title, subtitle, actions }) {
                 title="Student Academic Learning Portal"
               >
                 <GraduationCap size={13} />
-                <span>विद्यार्थी (Student)</span>
+                <span>Student</span>
               </Link>
 
               <Link
@@ -75,7 +82,7 @@ export default function AppLayout({ children, title, subtitle, actions }) {
                 title="Institutional Administration Hub"
               >
                 <ShieldAlert size={13} />
-                <span>प्रशासन (Admin)</span>
+                <span>Admin</span>
               </Link>
 
               <Link
@@ -86,14 +93,14 @@ export default function AppLayout({ children, title, subtitle, actions }) {
                 title="Executive Board Command Deck"
               >
                 <Crown size={13} />
-                <span>बोर्ड अध्यक्ष (Owner)</span>
+                <span>Executive</span>
               </Link>
             </div>
 
-            {/* Nepal Patro Date Pill */}
-            <div className="nepal-patro-pill" title="नेपाल संवत् तथा विक्रम संवत् (Nepal Standard Time)">
+            {/* Live Date Pill */}
+            <div className="nepal-patro-pill" title="Current Academic Date">
               <Calendar size={13} className="text-amber" />
-              <span>वि.सं. २०८१ आश्विन २४</span>
+              <span>{todayFormatted}</span>
             </div>
 
             {/* Custom Page Actions if passed */}
@@ -104,7 +111,7 @@ export default function AppLayout({ children, title, subtitle, actions }) {
               <button
                 className="notification-bell-btn"
                 onClick={() => setShowNotifications(!showNotifications)}
-                title="School Circulars & Emergency Notices"
+                title="School Circulars & Notifications"
               >
                 <Bell size={16} />
                 <span className="bell-badge">3</span>
@@ -115,7 +122,7 @@ export default function AppLayout({ children, title, subtitle, actions }) {
                   <div className="notif-header">
                     <div className="notif-title-row">
                       <Bell size={14} className="text-cyan" />
-                      <strong>विद्यालय सूचना केन्द्र (Circulars)</strong>
+                      <strong>Notifications & Alerts</strong>
                     </div>
                     <button
                       onClick={() => setShowNotifications(false)}
@@ -145,7 +152,7 @@ export default function AppLayout({ children, title, subtitle, actions }) {
                       onClick={() => setShowNotifications(false)}
                       className="notif-view-all"
                     >
-                      <span>सबै सूचनाहरू हेर्नुहोस् (Notice Desk)</span>
+                      <span>View All Circulars</span>
                       <ExternalLink size={12} />
                     </Link>
                   </div>
@@ -153,11 +160,10 @@ export default function AppLayout({ children, title, subtitle, actions }) {
               )}
             </div>
 
-            {/* AI Status Indicator */}
+            {/* Institutional Status Indicator */}
             <div className="ai-status-indicator">
               <span className="pulse-dot"></span>
-              <Sparkles size={14} className="sparkle-icon" />
-              <span>Neural Engine Online</span>
+              <span>Session: 2025–26</span>
             </div>
           </div>
         </header>
