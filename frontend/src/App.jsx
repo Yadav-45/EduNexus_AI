@@ -55,6 +55,7 @@ import StaffPerformance from "./pages/Staff/StaffPerformance";
 import Exam from "./pages/Academic/Exam";
 import ExamPapers from "./pages/Academic/Exampapers";
 import ExamResults from "./pages/Academic/ExamResults";
+import Timetable from "./pages/Timetable";
 
 function App() {
   return (
@@ -317,6 +318,18 @@ function App() {
           element={
             <ProtectedRoute>
               <Accounting />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* ==================== TIMETABLE ==================== */}
+
+        <Route
+          path="/timetable"
+          element={
+            <ProtectedRoute>
+              <Timetable />
             </ProtectedRoute>
           }
         />
